@@ -1,130 +1,84 @@
-<p align="center">
-  <h2 align="center">🌊 justadrop.xyz 🌊 </h2>
-</p>
+# JustADrop
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/React-18.x-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.x-646CFF)](https://vitejs.dev/)
-[![CI](https://github.com/shravan20/justadrop.xyz/actions/workflows/ci.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/shravan20/justadrop.xyz/actions/workflows/codeql.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/codeql.yml)
-[![Dependency Review](https://github.com/shravan20/justadrop.xyz/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/dependency-review.yml)
-[![Bundle Size](https://github.com/shravan20/justadrop.xyz/actions/workflows/bundle-size.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/bundle-size.yml)
-[![Dead Code Check](https://github.com/shravan20/justadrop.xyz/actions/workflows/dead-code.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/dead-code.yml)
-[![Lighthouse Check](https://github.com/shravan20/justadrop.xyz/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/shravan20/justadrop.xyz/actions/workflows/lighthouse.yml)
+A volunteer opportunities platform connecting volunteers with organizations.
 
-Just A Drop is an open-source platform connecting volunteers with NGOs and charitable organizations. Our mission is to facilitate meaningful connections between compassionate individuals and organizations making a difference in their communities.
+## Tech Stack
 
-## 🌟 Features
+- **Framework:** Next.js 14 (App Router)
+- **Database:** PostgreSQL (Supabase)
+- **ORM:** Prisma
+- **Auth:** Supabase Auth
+- **Styling:** Tailwind CSS
+- **Language:** TypeScript
+- **Package Manager:** Bun
 
-- **Multi-User Roles**: Support for volunteers, NGOs, and administrators
-- **Opportunity Management**: Create, browse, and manage volunteer opportunities
-- **Real-time Updates**: Built with modern React and Supabase for real-time features
-- **Responsive Design**: Mobile-first approach using Tailwind CSS
-- **Modern Stack**: Built with React 18, TypeScript, and Vite
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher recommended)
-- npm/pnpm/yarn
-- Git
+- Bun installed
+- Supabase account
 
 ### Installation
 
-1. Clone the repository:
+```bash
+# Install dependencies
+bun install
 
-   ```bash
-   git clone https://github.com/shravan20/justadrop.xyz.git
-   cd justadrop.xyz
-   ```
+# Setup environment variables
+cp .env.example .env
+# Add your Supabase credentials to .env
 
-2. Install dependencies:
+# Generate Prisma Client
+bun run db:generate
 
-   ```bash
-   npm install
-   ```
+# Sync database schema
+bun run db:push
 
-3. Set up environment variables:
+# Start development server
+bun run dev
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+Visit [http://localhost:3000](http://localhost:3000)
 
-   Update the `.env` file with your Supabase credentials:
+## Project Structure
 
-   ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+```
+app/          # Next.js routes and pages
+├── admin/    # Admin dashboard
+├── auth/     # Authentication
+├── volunteer/
+└── organization/
 
-4. Start the development server:
+lib/          # Core utilities
+├── prisma.ts     # Database client
+├── auth.ts       # Auth helpers
+└── supabase/     # Supabase config
 
-   ```bash
-   npm run dev
-   ```
+prisma/       # Database schema
+components/   # React components
+types/        # TypeScript types
+```
 
-The application will be available at `http://localhost:8080`
-
-### Building for Production
+## Available Scripts
 
 ```bash
-npm run build
+bun run dev          # Start dev server
+bun run build        # Build for production
+bun run start        # Start production server
+bun run db:studio    # Open database GUI
+bun run db:push      # Sync schema changes
 ```
 
-## 🏗️ Project Structure
+## Features
 
-```
-justadrop.xyz/
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── contexts/      # React context providers
-│   ├── hooks/         # Custom React hooks
-│   ├── pages/         # Page components
-│   ├── services/      # API and service functions
-│   ├── types/         # TypeScript type definitions
-│   └── utils/         # Utility functions
-├── public/            # Static assets
-└── supabase/         # Supabase configuration and migrations
-```
+- Role-based access (Volunteer, Organization, Admin)
+- Opportunity management
+- Application tracking
+- User profiles
+- Admin dashboard
 
-## 🛠️ Tech Stack
+## License
 
-- **Frontend Framework**: React 18
-- **Language**: TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI
-- **Backend/Database**: Supabase
-- **State Management**: React Query
-- **Form Handling**: React Hook Form
-- **Validation**: Zod
-- **Icons**: Lucide React
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
-
-We welcome contributions! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🙏 Acknowledgments
-
-- Built with love for FOSS
-- UI Components powered by [Radix UI](https://www.radix-ui.com/)
-- Icons by [Lucide](https://lucide.dev/)
-
-## 📫 Contact
-
-For any queries or suggestions, please reach out to:
-
-- Email: <shravan@ohmyscript.com>
-- Project Link: [https://github.com/shravan20/justadrop.xyz](https://github.com/shravan20/justadrop.xyz)

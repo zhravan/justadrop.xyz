@@ -1,0 +1,142 @@
+// Prisma Schema for JustADrop
+// Database: Supabase (PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  volunteer
+  organization
+  admin
+}
+
+enum OpportunityStatus {
+  draft
+  published
+  closed
+}
+
+enum ApplicationStatus {
+  pending
+  approved
+  rejected
+  completed
+}
+
+// Models
+
+model Profile {
+  id                   String   @id @db.Uuid
+  email                String   @unique
+  fullName             String?  @map("full_name")
+  role                 UserRole @default(volunteer)
+  avatarUrl            String?  @map("avatar_url")
+  phone                String?
+  bio                  String?
+  location             String?
+  organizationName     String?  @map("organization_name")
+  organizationVerified Boolean  @default(false) @map("organization_verified")
+  skills               String[]
+  interests            String[]
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  opportunities      Opportunity[]      @relation("OrganizationOpportunities")
+  applications       Application[]      @relation("VolunteerApplications")
+  savedOpportunities SavedOpportunity[]
+
+  @@index([role])
+  @@index([email])
+  @@index([organizationVerified], map: "idx_profiles_organization_verified")
+  @@map("profiles")
+}
+
+model Opportunity {
+  id             String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String            @map("organization_id") @db.Uuid
+  title          String
+  description    String
+  category       String
+  location       String
+  remoteOption   Boolean           @default(false) @map("remote_option")
+  dateStart      DateTime          @map("date_start") @db.Timestamptz()
+  dateEnd        DateTime?         @map("date_end") @db.Timestamptz()
+  timeCommitment String            @map("time_commitment")
+  spotsAvailable Int               @default(1) @map("spots_available")
+  spotsFilled    Int               @default(0) @map("spots_filled")
+  skillsRequired String[]          @map("skills_required")
+  status         OpportunityStatus @default(draft)
+  imageUrl       String?           @map("image_url")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  organization Profile            @relation("OrganizationOpportunities", fields: [organizationId], references: [id], onDelete: Cascade)
+  applications Application[]
+  savedBy      SavedOpportunity[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([category])
+  @@index([dateStart])
+  @@index([status, dateStart], map: "idx_opportunities_published")
+  @@map("opportunities")
+}
+
+model Application {
+  id             String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  opportunityId  String            @map("opportunity_id") @db.Uuid
+  volunteerId    String            @map("volunteer_id") @db.Uuid
+  status         ApplicationStatus @default(pending)
+  message        String?
+  hoursCompleted Int?              @map("hours_completed")
+  feedback       String?
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  volunteer   Profile     @relation("VolunteerApplications", fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, volunteerId])
+  @@index([opportunityId])
+  @@index([volunteerId])
+  @@index([status])
+  @@index([opportunityId, status], map: "idx_applications_pending")
+  @@map("applications")
+}
+
+model SavedOpportunity {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  volunteerId   String   @map("volunteer_id") @db.Uuid
+  opportunityId String   @map("opportunity_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  volunteer   Profile     @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([volunteerId, opportunityId])
+  @@index([volunteerId])
+  @@index([opportunityId])
+  @@map("saved_opportunities")
+}
+
+// Migration tracking table
+model Migration {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz()
+
+  @@index([name])
+  @@map("_migrations")
+}
