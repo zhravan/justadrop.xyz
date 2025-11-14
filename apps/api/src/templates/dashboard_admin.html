@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - {{ project_name }}{% endblock %}
+
+{% block content %}
+<script>
+// Auth check - redirect if not admin
+const token = localStorage.getItem('access_token');
+const username = localStorage.getItem('username');
+const role = localStorage.getItem('user_role');
+
+if (!token) {
+    window.location.replace('/login');
+} else if (role && role.toLowerCase() !== 'admin') {
+    const roleMap = {
+        'volunteer': '/dashboard/volunteer',
+        'organization': '/dashboard/organization'
+    };
+    window.location.replace(roleMap[role.toLowerCase()] || '/');
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/index.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/styles.css">
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+            <p class="text-gray-600">Platform management and oversight</p>
+        </div>
+
+        <!-- Platform Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Total Users</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="platformStats.users?.total || 0">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-orange-100 rounded-lg">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Pending Verifications</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="platformStats.organizations?.pending_verifications || 0">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Active Opportunities</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="platformStats.opportunities?.active || 0">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Total Applications</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="platformStats.applications?.total || 0">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button 
+                        @click="activeTab = 'verifications'"
+                        :class="activeTab === 'verifications' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Pending Verifications
+                        <span v-if="pendingOrgs.length > 0" class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded-full">
+                            {{ pendingOrgs.length }}
+                        </span>
+                    </button>
+                    <button 
+                        @click="activeTab = 'users'"
+                        :class="activeTab === 'users' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Users
+                    </button>
+                    <button 
+                        @click="activeTab = 'opportunities'"
+                        :class="activeTab === 'opportunities' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Opportunities
+                    </button>
+                    <button 
+                        @click="activeTab = 'activity'"
+                        :class="activeTab === 'activity' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Recent Activity
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Pending Verifications Tab -->
+                <div v-if="activeTab === 'verifications'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="pendingOrgs.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No pending verifications.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="org in pendingOrgs" :key="org.id" class="border border-gray-200 rounded-lg p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ org.organization_name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">User ID: {{ org.user_id }}</p>
+                                    <p v-if="org.registration_number" class="text-sm text-gray-600">Reg #: {{ org.registration_number }}</p>
+                                </div>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                                    Pending
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <p v-if="org.description" class="text-sm text-gray-700">{{ org.description }}</p>
+                                <p v-if="org.website" class="text-sm text-gray-600">Website: <a :href="org.website" target="_blank" class="text-orange-600 hover:underline">{{ org.website }}</a></p>
+                                <p v-if="org.city" class="text-sm text-gray-600">City: {{ org.city }}</p>
+                                <p v-if="org.category" class="text-sm text-gray-600">Category: {{ org.category }}</p>
+                                <p v-if="org.contact_email" class="text-sm text-gray-600">Email: {{ org.contact_email }}</p>
+                                <p v-if="org.contact_phone" class="text-sm text-gray-600">Phone: {{ org.contact_phone }}</p>
+                            </div>
+
+                            <div class="flex space-x-2 pt-4 border-t">
+                                <button @click="verifyOrg(org.id, 'verified')" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                    ✓ Verify
+                                </button>
+                                <button @click="verifyOrg(org.id, 'rejected')" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                    ✗ Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div v-if="activeTab === 'users'">
+                    <!-- Filter -->
+                    <div class="mb-4 flex space-x-4">
+                        <select v-model="userFilter" @change="loadUsers" class="px-4 py-2 border border-gray-300 rounded-md">
+                            <option value="">All Roles</option>
+                            <option value="volunteer">Volunteers</option>
+                            <option value="organization">Organizations</option>
+                            <option value="admin">Admins</option>
+                        </select>
+                    </div>
+
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="users.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No users found.</p>
+                    </div>
+                    <div v-else>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="user in users" :key="user.id">
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ user.id }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ user.username }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                                {{ user.role }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span :class="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" class="px-2 py-1 text-xs font-medium rounded-full">
+                                                {{ user.is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <button 
+                                                v-if="user.role !== 'admin'"
+                                                @click="toggleUserStatus(user)" 
+                                                class="text-orange-600 hover:text-orange-700 font-medium"
+                                            >
+                                                {{ user.is_active ? 'Deactivate' : 'Activate' }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opportunities Tab -->
+                <div v-if="activeTab === 'opportunities'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="opportunities.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No opportunities found.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="opp in opportunities" :key="opp.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">{{ opp.title }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Organization: {{ opp.organization_name }}</p>
+                                    <p class="text-sm text-gray-600">City: {{ opp.city || 'N/A' }} | Category: {{ opp.category || 'N/A' }}</p>
+                                </div>
+                                <span :class="getStatusClass(opp.status)" class="px-3 py-1 text-xs font-medium rounded-full">
+                                    {{ opp.status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Tab -->
+                <div v-if="activeTab === 'activity'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else class="space-y-6">
+                        <!-- Recent Users -->
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-3">Recent Users</h3>
+                            <div class="space-y-2">
+                                <div v-for="user in recentActivity.recent_users" :key="user.id" class="flex items-center justify-between py-2 border-b border-gray-100">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
+                                        <p class="text-xs text-gray-600">{{ user.role }}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">{{ formatDate(user.created_at) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending Verifications -->
+                        <div v-if="recentActivity.pending_verifications?.length > 0">
+                            <h3 class="font-semibold text-gray-900 mb-3">Pending Verifications</h3>
+                            <div class="space-y-2">
+                                <div v-for="org in recentActivity.pending_verifications" :key="org.id" class="flex items-center justify-between py-2 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900">{{ org.organization_name }}</p>
+                                    <p class="text-xs text-gray-500">{{ formatDate(org.created_at) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Opportunities -->
+                        <div v-if="recentActivity.recent_opportunities?.length > 0">
+                            <h3 class="font-semibold text-gray-900 mb-3">Recent Opportunities</h3>
+                            <div class="space-y-2">
+                                <div v-for="opp in recentActivity.recent_opportunities" :key="opp.id" class="flex items-center justify-between py-2 border-b border-gray-100">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ opp.title }}</p>
+                                        <p class="text-xs text-gray-600">{{ opp.status }}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">{{ formatDate(opp.created_at) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+const { toast } = window.Sonner;
+
+createApp({
+    data() {
+        return {
+            activeTab: 'verifications',
+            loading: false,
+            platformStats: {},
+            pendingOrgs: [],
+            users: [],
+            opportunities: [],
+            recentActivity: {},
+            userFilter: ''
+        };
+    },
+    mounted() {
+        this.loadPlatformStats();
+        this.loadData();
+    },
+    watch: {
+        activeTab() {
+            this.loadData();
+        }
+    },
+    methods: {
+        async loadPlatformStats() {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    this.platformStats = await response.json();
+                }
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+            }
+        },
+        async loadData() {
+            this.loading = true;
+            try {
+                if (this.activeTab === 'verifications') {
+                    await this.loadPendingOrgs();
+                } else if (this.activeTab === 'users') {
+                    await this.loadUsers();
+                } else if (this.activeTab === 'opportunities') {
+                    await this.loadOpportunities();
+                } else if (this.activeTab === 'activity') {
+                    await this.loadRecentActivity();
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        async loadPendingOrgs() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/admin/organizations/pending', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.pendingOrgs = await response.json();
+            }
+        },
+        async loadUsers() {
+            const token = localStorage.getItem('access_token');
+            const params = this.userFilter ? `?role=${this.userFilter}` : '';
+            const response = await fetch(`/api/admin/users${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.users = await response.json();
+            }
+        },
+        async loadOpportunities() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/admin/opportunities', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.opportunities = await response.json();
+            }
+        },
+        async loadRecentActivity() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/admin/recent-activity', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.recentActivity = await response.json();
+            }
+        },
+        async verifyOrg(orgId, status) {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch(`/api/admin/organizations/${orgId}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        verification_status: status,
+                        verification_notes: ''
+                    })
+                });
+
+                if (response.ok) {
+                    toast.success(`Organization ${status}`);
+                    this.loadPendingOrgs();
+                    this.loadPlatformStats();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        async toggleUserStatus(user) {
+            const token = localStorage.getItem('access_token');
+            const action = user.is_active ? 'deactivate' : 'activate';
+            
+            try {
+                const response = await fetch(`/api/admin/users/${user.id}/${action}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    toast.success(`User ${action}d`);
+                    this.loadUsers();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        getStatusClass(status) {
+            const classes = {
+                'draft': 'bg-gray-100 text-gray-800',
+                'active': 'bg-green-100 text-green-800',
+                'closed': 'bg-red-100 text-red-800',
+                'completed': 'bg-blue-100 text-blue-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-US', { 
+                year: 'numeric', month: 'short', day: 'numeric' 
+            });
+        }
+    }
+}).mount('#app');
+</script>
+{% endblock %}

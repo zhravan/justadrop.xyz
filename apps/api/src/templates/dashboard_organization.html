@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+
+{% block title %}Organization Dashboard - {{ project_name }}{% endblock %}
+
+{% block content %}
+<script>
+// Auth check - redirect if not organization
+const token = localStorage.getItem('access_token');
+const username = localStorage.getItem('username');
+const role = localStorage.getItem('user_role');
+
+if (!token) {
+    window.location.replace('/login');
+} else if (role && role.toLowerCase() !== 'organization') {
+    const roleMap = {
+        'volunteer': '/dashboard/volunteer',
+        'admin': '/dashboard/admin'
+    };
+    window.location.replace(roleMap[role.toLowerCase()] || '/');
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/index.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/styles.css">
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Verification Status Banner -->
+        <div v-if="verificationStatus === 'pending'" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+            <div class="flex">
+                <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700 font-medium">Verification Pending</p>
+                    <p class="text-sm text-yellow-700 mt-1">Your organization is awaiting admin verification. You can create opportunities but they won't be visible until verified.</p>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="verificationStatus === 'rejected'" class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+            <div class="flex">
+                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700 font-medium">Verification Rejected</p>
+                    <p class="text-sm text-red-700 mt-1">Your organization verification was rejected. Please contact support for more information.</p>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="verificationStatus === 'verified'" class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
+            <div class="flex">
+                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm text-green-700 font-medium">✓ Verified Organization</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Organization Dashboard</h1>
+            <p class="text-gray-600">Manage your opportunities and volunteer applications</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-orange-100 rounded-lg">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Opportunities</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.totalOpportunities">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Applications</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.totalApplications">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Active Volunteers</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.totalVolunteers">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Total Hours</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.totalVolunteerHours">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button 
+                        @click="activeTab = 'opportunities'"
+                        :class="activeTab === 'opportunities' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        My Opportunities
+                    </button>
+                    <button 
+                        @click="activeTab = 'applications'"
+                        :class="activeTab === 'applications' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Applications
+                        <span v-if="stats.pendingApplications > 0" class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded-full">
+                            {{ stats.pendingApplications }}
+                        </span>
+                    </button>
+                    <button 
+                        @click="activeTab = 'completions'"
+                        :class="activeTab === 'completions' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm"
+                    >
+                        Pending Completions
+                        <span v-if="stats.pendingCompletions > 0" class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded-full">
+                            {{ stats.pendingCompletions }}
+                        </span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Opportunities Tab -->
+                <div v-if="activeTab === 'opportunities'">
+                    <div class="mb-4">
+                        <button @click="showCreateModal = true" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                            + Create Opportunity
+                        </button>
+                    </div>
+                    
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="opportunities.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No opportunities yet. Create your first one!</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="opp in opportunities" :key="opp.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-gray-900">{{ opp.title }}</h3>
+                                <span :class="getStatusClass(opp.status)" class="px-3 py-1 text-xs font-medium rounded-full">
+                                    {{ opp.status }}
+                                </span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-3">{{ opp.description.substring(0, 150) }}...</p>
+                            <div class="flex items-center text-sm text-gray-600 space-x-4">
+                                <span v-if="opp.city">📍 {{ opp.city }}</span>
+                                <span v-if="opp.spots_available">{{ opp.spots_filled }}/{{ opp.spots_available }} spots filled</span>
+                            </div>
+                            <div class="mt-3 flex space-x-2">
+                                <button @click="editOpportunity(opp)" class="text-sm px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
+                                    Edit
+                                </button>
+                                <button @click="toggleStatus(opp)" class="text-sm px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
+                                    {{ opp.status === 'active' ? 'Close' : 'Activate' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications Tab -->
+                <div v-if="activeTab === 'applications'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="applications.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No applications yet.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="app in applications" :key="app.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">Application #{{ app.id }}</h3>
+                                    <p class="text-sm text-gray-600">Volunteer ID: {{ app.volunteer_id }}</p>
+                                    <p class="text-sm text-gray-600">Opportunity ID: {{ app.opportunity_id }}</p>
+                                </div>
+                                <span :class="getStatusClass(app.status)" class="px-3 py-1 text-xs font-medium rounded-full">
+                                    {{ app.status }}
+                                </span>
+                            </div>
+                            <p v-if="app.cover_letter" class="text-sm text-gray-700 mt-2 mb-3 italic">"{{ app.cover_letter }}"</p>
+                            
+                            <div v-if="app.status === 'pending'" class="mt-3 flex space-x-2">
+                                <button @click="reviewApplication(app.id, 'approved')" class="text-sm px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                    Approve
+                                </button>
+                                <button @click="reviewApplication(app.id, 'rejected')" class="text-sm px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                    Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Completions Tab -->
+                <div v-if="activeTab === 'completions'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="pendingCompletions.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No pending completion requests.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="app in pendingCompletions" :key="app.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">Completion Request #{{ app.id }}</h3>
+                                    <p class="text-sm text-gray-600">Volunteer ID: {{ app.volunteer_id }}</p>
+                                    <p class="text-sm text-gray-600">Hours: {{ app.hours_completed }}</p>
+                                    <p v-if="app.completion_notes" class="text-sm text-gray-700 mt-2 italic">"{{ app.completion_notes }}"</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 flex space-x-2">
+                                <button @click="reviewCompletion(app.id, 'approved')" class="text-sm px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                    Approve
+                                </button>
+                                <button @click="reviewCompletion(app.id, 'rejected')" class="text-sm px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                    Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Opportunity Modal -->
+<div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 overflow-y-auto" @click.self="closeModals">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+        <div class="relative bg-white rounded-lg max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">{{ showEditModal ? 'Edit' : 'Create' }} Opportunity</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input v-model="opportunityForm.title" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <textarea v-model="opportunityForm.description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md" required></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                        <input v-model="opportunityForm.city" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <input v-model="opportunityForm.category" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Skills Needed</label>
+                    <input v-model="opportunityForm.skills_needed" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Spots Available</label>
+                        <input v-model="opportunityForm.spots_available" type="number" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select v-model="opportunityForm.status" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                            <option value="draft">Draft</option>
+                            <option value="active">Active</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex space-x-3">
+                <button @click="saveOpportunity" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                    {{ showEditModal ? 'Update' : 'Create' }}
+                </button>
+                <button @click="closeModals" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+const { toast } = window.Sonner;
+
+createApp({
+    data() {
+        return {
+            activeTab: 'opportunities',
+            loading: false,
+            verificationStatus: 'pending',
+            stats: {
+                totalOpportunities: 0,
+                activeOpportunities: 0,
+                totalApplications: 0,
+                pendingApplications: 0,
+                totalVolunteers: 0,
+                pendingCompletions: 0,
+                totalVolunteerHours: 0
+            },
+            opportunities: [],
+            applications: [],
+            pendingCompletions: [],
+            showCreateModal: false,
+            showEditModal: false,
+            editingOpportunityId: null,
+            opportunityForm: {
+                title: '',
+                description: '',
+                city: '',
+                category: '',
+                skills_needed: '',
+                spots_available: null,
+                status: 'draft'
+            }
+        };
+    },
+    mounted() {
+        this.loadStats();
+        this.loadData();
+    },
+    watch: {
+        activeTab() {
+            this.loadData();
+        }
+    },
+    methods: {
+        async loadStats() {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch('/api/organization/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    this.stats = await response.json();
+                    this.verificationStatus = this.stats.verification_status;
+                }
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+            }
+        },
+        async loadData() {
+            this.loading = true;
+            try {
+                if (this.activeTab === 'opportunities') {
+                    await this.loadOpportunities();
+                } else if (this.activeTab === 'applications') {
+                    await this.loadApplications();
+                } else if (this.activeTab === 'completions') {
+                    await this.loadPendingCompletions();
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        async loadOpportunities() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/organization/opportunities', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.opportunities = await response.json();
+            }
+        },
+        async loadApplications() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/organization/applications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.applications = await response.json();
+            }
+        },
+        async loadPendingCompletions() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/organization/applications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const all = await response.json();
+                this.pendingCompletions = all.filter(a => a.completion_status === 'pending');
+            }
+        },
+        editOpportunity(opp) {
+            this.editingOpportunityId = opp.id;
+            this.opportunityForm = {
+                title: opp.title,
+                description: opp.description,
+                city: opp.city,
+                category: opp.category,
+                skills_needed: opp.skills_needed,
+                spots_available: opp.spots_available,
+                status: opp.status
+            };
+            this.showEditModal = true;
+        },
+        async saveOpportunity() {
+            const token = localStorage.getItem('access_token');
+            const method = this.showEditModal ? 'PATCH' : 'POST';
+            const url = this.showEditModal 
+                ? `/api/organization/opportunities/${this.editingOpportunityId}`
+                : '/api/organization/opportunities';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(this.opportunityForm)
+                });
+
+                if (response.ok) {
+                    toast.success(this.showEditModal ? 'Opportunity updated!' : 'Opportunity created!');
+                    this.closeModals();
+                    this.loadOpportunities();
+                    this.loadStats();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        async toggleStatus(opp) {
+            const newStatus = opp.status === 'active' ? 'closed' : 'active';
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`/api/organization/opportunities/${opp.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    toast.success(`Opportunity ${newStatus}`);
+                    this.loadOpportunities();
+                } else {
+                    toast.error('Failed to update status');
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        async reviewApplication(appId, decision) {
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`/api/organization/applications/${appId}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        status: decision,
+                        review_notes: ''
+                    })
+                });
+
+                if (response.ok) {
+                    toast.success(`Application ${decision}`);
+                    this.loadApplications();
+                    this.loadStats();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        async reviewCompletion(appId, decision) {
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`/api/organization/applications/${appId}/complete/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        completion_status: decision,
+                        completion_review_notes: ''
+                    })
+                });
+
+                if (response.ok) {
+                    toast.success(`Completion ${decision}`);
+                    this.loadPendingCompletions();
+                    this.loadStats();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        closeModals() {
+            this.showCreateModal = false;
+            this.showEditModal = false;
+            this.editingOpportunityId = null;
+            this.opportunityForm = {
+                title: '',
+                description: '',
+                city: '',
+                category: '',
+                skills_needed: '',
+                spots_available: null,
+                status: 'draft'
+            };
+        },
+        getStatusClass(status) {
+            const classes = {
+                'draft': 'bg-gray-100 text-gray-800',
+                'active': 'bg-green-100 text-green-800',
+                'closed': 'bg-red-100 text-red-800',
+                'completed': 'bg-blue-100 text-blue-800',
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'approved': 'bg-green-100 text-green-800',
+                'rejected': 'bg-red-100 text-red-800'
+            };
+            return classes[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
+        }
+    }
+}).mount('#app');
+</script>
+{% endblock %}
