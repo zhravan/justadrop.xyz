@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_name }} - Connect Volunteers with Meaningful Opportunities{% endblock %}
+
+{% block content %}
+<script>
+// Redirect logged-in users to their dashboard - immediate, no flash
+(function() {
+    const token = localStorage.getItem('access_token');
+    const role = localStorage.getItem('user_role');
+    
+    if (token && role) {
+        const roleMap = {
+            'volunteer': '/dashboard/volunteer',
+            'organization': '/dashboard/organization',
+            'admin': '/dashboard/admin'
+        };
+        window.location.replace(roleMap[role.toLowerCase()] || '/');
+    }
+})();
+</script>
+
+<!-- Hero Section -->
+<section class="relative bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+        <div class="text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                Growing a Community of <br/>
+                <span class="text-orange-600">Changemakers</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-10 leading-relaxed">
+                Just a Drop is a platform that connects volunteers with meaningful opportunities and helps organizations create lasting impact.
+            </p>
+            
+            <div class="flex flex-wrap justify-center gap-4 mb-16">
+                <a href="/opportunities" class="px-8 py-3 bg-orange-600 text-white rounded-md font-semibold hover:bg-orange-700 transition-colors">
+                    Browse Opportunities
+                </a>
+                <a href="/register" class="px-8 py-3 border-2 border-orange-600 text-orange-600 rounded-md font-semibold hover:bg-orange-600 hover:text-white transition-colors">
+                    Get Started
+                </a>
+            </div>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-20">
+                <stat-item v-for="stat in stats" :key="stat.label" :number="stat.number" :label="stat.label"></stat-item>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <p class="text-sm uppercase tracking-wider text-orange-600 font-semibold mb-4">ABOUT</p>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 max-w-4xl mx-auto leading-relaxed">
+                Just a Drop is a platform that aims at connecting volunteers with meaningful opportunities and helping organizations create lasting impact.
+            </h2>
+        </div>
+    </div>
+</section>
+
+<!-- Goals Section -->
+<section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <p class="text-sm uppercase tracking-wider text-orange-600 font-semibold mb-4">GOALS</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <goal-card 
+                v-for="(goal, index) in goals" 
+                :key="goal.title"
+                :number="(index + 1).toString().padStart(2, '0')"
+                :title="goal.title"
+                :description="goal.description">
+            </goal-card>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 bg-gray-50" id="features">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Platform Features</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <feature-card 
+                v-for="feature in features" 
+                :key="feature.title"
+                :icon="feature.icon"
+                :title="feature.title"
+                :description="feature.description">
+            </feature-card>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-20 bg-white" id="how-it-works">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p class="text-xl text-gray-600">Get started in three simple steps</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <step-card 
+                v-for="step in steps" 
+                :key="step.number"
+                :number="step.number"
+                :title="step.title"
+                :description="step.description">
+            </step-card>
+        </div>
+    </div>
+</section>
+
+<!-- User Types Section -->
+<section class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Who We Serve</h2>
+            <p class="text-xl text-gray-600">Connecting volunteers, organizations, and communities</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <user-type-card 
+                v-for="userType in userTypes" 
+                :key="userType.title"
+                :title="userType.title"
+                :description="userType.description"
+                :features="userType.features">
+            </user-type-card>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="relative bg-orange-600 text-white" id="get-started">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <h2 class="text-4xl font-bold mb-6">Get in Touch</h2>
+        <p class="text-xl mb-8 text-orange-100 max-w-2xl mx-auto">
+            Write to us at <a href="mailto:hello@justadrop.xyz" class="underline hover:text-white">hello@justadrop.xyz</a> or explore our platform through the API documentation.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="/api/docs" class="px-8 py-3 bg-white text-orange-600 rounded-md font-semibold hover:bg-orange-50 transition-colors">
+                Explore API
+            </a>
+            <a href="/health" class="px-8 py-3 border-2 border-white text-white rounded-md font-semibold hover:bg-white hover:text-orange-600 transition-colors">
+                System Status
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

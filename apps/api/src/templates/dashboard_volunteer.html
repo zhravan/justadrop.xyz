@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Volunteer Dashboard - {{ project_name }}{% endblock %}
+
+{% block content %}
+<script>
+// Auth check - redirect if not volunteer
+const token = localStorage.getItem('access_token');
+const username = localStorage.getItem('username');
+const role = localStorage.getItem('user_role');
+
+if (!token) {
+    window.location.replace('/login');
+} else if (role && role.toLowerCase() !== 'volunteer') {
+    const roleMap = {
+        'organization': '/dashboard/organization',
+        'admin': '/dashboard/admin'
+    };
+    window.location.replace(roleMap[role.toLowerCase()] || '/');
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/index.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/styles.css">
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome, <span id="userName">{{ username }}</span>!</h1>
+            <p class="text-gray-600">Manage your volunteer activities and applications</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-orange-100 rounded-lg">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Applications</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.totalApplications">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Approved</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.approvedApplications">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Bookmarks</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.bookmarks">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Volunteer Hours</p>
+                        <p class="text-2xl font-bold text-gray-900" v-text="stats.volunteerHours">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button 
+                        @click="activeTab = 'opportunities'"
+                        :class="activeTab === 'opportunities' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                    >
+                        Browse Opportunities
+                    </button>
+                    <button 
+                        @click="activeTab = 'applications'"
+                        :class="activeTab === 'applications' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                    >
+                        My Applications
+                    </button>
+                    <button 
+                        @click="activeTab = 'bookmarks'"
+                        :class="activeTab === 'bookmarks' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                    >
+                        Bookmarks
+                    </button>
+                    <button 
+                        @click="activeTab = 'history'"
+                        :class="activeTab === 'history' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'"
+                        class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                    >
+                        History
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Browse Opportunities Tab -->
+                <div v-if="activeTab === 'opportunities'">
+                    <div class="mb-4">
+                        <a href="/opportunities" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            Browse All Opportunities
+                        </a>
+                    </div>
+                    <p class="text-gray-600">Visit the opportunities page to find and apply for volunteer positions that match your interests and skills.</p>
+                </div>
+
+                <!-- My Applications Tab -->
+                <div v-if="activeTab === 'applications'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="applications.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No applications yet. Browse opportunities to get started!</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="app in applications" :key="app.id" class="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-gray-900">Application #{{ app.id }}</h3>
+                                <span :class="getStatusClass(app.status)" class="px-3 py-1 text-xs font-medium rounded-full">
+                                    {{ app.status }}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Opportunity ID: {{ app.opportunity_id }}</p>
+                            <p class="text-sm text-gray-600 mb-3">Applied: {{ formatDate(app.created_at) }}</p>
+                            
+                            <!-- Completion Section -->
+                            <div v-if="app.status === 'approved' && !app.completion_status" class="mt-3 pt-3 border-t">
+                                <button @click="markComplete(app.id)" class="text-sm px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                    Mark as Complete
+                                </button>
+                            </div>
+                            <div v-if="app.completion_status" class="mt-3 pt-3 border-t">
+                                <p class="text-sm text-gray-700">
+                                    Completion Status: 
+                                    <span :class="getStatusClass(app.completion_status)" class="ml-2 px-2 py-1 text-xs font-medium rounded-full">
+                                        {{ app.completion_status }}
+                                    </span>
+                                </p>
+                                <p v-if="app.hours_completed" class="text-sm text-gray-600 mt-1">Hours: {{ app.hours_completed }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookmarks Tab -->
+                <div v-if="activeTab === 'bookmarks'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="bookmarks.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No bookmarks yet.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="bookmark in bookmarks" :key="bookmark.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">Opportunity #{{ bookmark.opportunity_id }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Saved: {{ formatDate(bookmark.created_at) }}</p>
+                                </div>
+                                <button @click="removeBookmark(bookmark.id)" class="text-red-600 hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div v-if="activeTab === 'history'">
+                    <div v-if="loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    </div>
+                    <div v-else-if="history.length === 0" class="text-center py-8">
+                        <p class="text-gray-600">No volunteer history yet.</p>
+                    </div>
+                    <div v-else class="space-y-4">
+                        <div v-for="item in history" :key="item.id" class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">{{ item.hours_contributed }} hours</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Date: {{ formatDate(item.activity_date) }}</p>
+                                    <p v-if="item.notes" class="text-sm text-gray-600 mt-1">{{ item.notes }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark Complete Modal -->
+<div v-if="showCompleteModal" class="fixed inset-0 z-50 overflow-y-auto" @click.self="showCompleteModal = false">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+        <div class="relative bg-white rounded-lg max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Mark Work as Complete</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Hours Completed *</label>
+                    <input 
+                        v-model="completionForm.hours" 
+                        type="number" 
+                        step="0.5"
+                        min="0"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                        required
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+                    <textarea 
+                        v-model="completionForm.notes" 
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex space-x-3">
+                <button @click="submitCompletion" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    Submit
+                </button>
+                <button @click="showCompleteModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+const { toast } = window.Sonner;
+
+createApp({
+    data() {
+        return {
+            activeTab: 'applications',
+            loading: false,
+            stats: {
+                totalApplications: 0,
+                approvedApplications: 0,
+                bookmarks: 0,
+                volunteerHours: 0
+            },
+            applications: [],
+            bookmarks: [],
+            history: [],
+            showCompleteModal: false,
+            selectedApplicationId: null,
+            completionForm: {
+                hours: null,
+                notes: ''
+            }
+        };
+    },
+    mounted() {
+        this.loadData();
+    },
+    watch: {
+        activeTab(newTab) {
+            this.loadData();
+        }
+    },
+    methods: {
+        async loadData() {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            this.loading = true;
+            try {
+                if (this.activeTab === 'applications') {
+                    await this.loadApplications();
+                } else if (this.activeTab === 'bookmarks') {
+                    await this.loadBookmarks();
+                } else if (this.activeTab === 'history') {
+                    await this.loadHistory();
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        async loadApplications() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/volunteer/applications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.applications = await response.json();
+                this.stats.totalApplications = this.applications.length;
+                this.stats.approvedApplications = this.applications.filter(a => a.status === 'approved').length;
+            }
+        },
+        async loadBookmarks() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/volunteer/bookmarks', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.bookmarks = await response.json();
+                this.stats.bookmarks = this.bookmarks.length;
+            }
+        },
+        async loadHistory() {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/volunteer/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                this.history = await response.json();
+                this.stats.volunteerHours = this.history.reduce((sum, h) => sum + (h.hours_contributed || 0), 0);
+            }
+        },
+        markComplete(applicationId) {
+            this.selectedApplicationId = applicationId;
+            this.completionForm = { hours: null, notes: '' };
+            this.showCompleteModal = true;
+        },
+        async submitCompletion() {
+            if (!this.completionForm.hours || this.completionForm.hours <= 0) {
+                toast.error('Please enter valid hours');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch(`/api/volunteer/applications/${this.selectedApplicationId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        hours_completed: parseFloat(this.completionForm.hours),
+                        completion_notes: this.completionForm.notes
+                    })
+                });
+
+                if (response.ok) {
+                    toast.success('Work marked as complete!', { description: 'Waiting for organization approval' });
+                    this.showCompleteModal = false;
+                    this.loadApplications();
+                } else {
+                    const error = await response.json();
+                    toast.error('Error', { description: error.detail || 'Failed to submit' });
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        async removeBookmark(bookmarkId) {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch(`/api/volunteer/bookmarks/${bookmarkId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    toast.success('Bookmark removed');
+                    this.loadBookmarks();
+                } else {
+                    toast.error('Failed to remove bookmark');
+                }
+            } catch (err) {
+                toast.error('Error', { description: err.message });
+            }
+        },
+        getStatusClass(status) {
+            const classes = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'approved': 'bg-green-100 text-green-800',
+                'rejected': 'bg-red-100 text-red-800'
+            };
+            return classes[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-US', { 
+                year: 'numeric', month: 'short', day: 'numeric' 
+            });
+        }
+    }
+}).mount('#app');
+
+// Set username if available
+const displayUsername = localStorage.getItem('username');
+if (displayUsername) {
+    document.getElementById('userName').textContent = displayUsername;
+}
+</script>
+{% endblock %}

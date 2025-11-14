@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - {{ project_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316',
+                        secondary: '#ea580c',
+                        accent: '#fb923c',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <script>
+    // Redirect if already logged in - immediate, no flash
+    (function() {
+        const token = localStorage.getItem('access_token');
+        const role = localStorage.getItem('user_role');
+        
+        if (token && role) {
+            const roleMap = {
+                'volunteer': '/dashboard/volunteer',
+                'organization': '/dashboard/organization',
+                'admin': '/dashboard/admin'
+            };
+            window.location.replace(roleMap[role.toLowerCase()] || '/');
+        }
+    })();
+    </script>
+
+    <div id="app">
+        <!-- Simple Navigation -->
+        <nav class="bg-white shadow-sm border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="/" class="text-2xl font-bold text-gray-900">
+                            {{ project_name }}
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-8">
+                        <a href="/" class="text-gray-600 hover:text-orange-600 font-medium transition-colors">Home</a>
+                        <a href="/opportunities" class="text-gray-600 hover:text-orange-600 font-medium transition-colors">Opportunities</a>
+                        <a href="/login" class="text-gray-600 hover:text-orange-600 font-medium transition-colors">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <section class="py-12 bg-gray-50 min-h-screen">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-lg border border-gray-200 p-8">
+                    <div class="text-center mb-8">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
+                        <p class="text-gray-600">Join Just a Drop and make a difference</p>
+                    </div>
+
+                    <!-- Role Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">I am a:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button 
+                                @click="selectedRole = 'volunteer'" 
+                                :class="selectedRole === 'volunteer' ? 'border-orange-600 bg-orange-50' : 'border-gray-300'"
+                                class="p-4 border-2 rounded-lg text-left hover:border-orange-600 transition-colors">
+                                <div class="font-semibold text-gray-900 mb-1">Volunteer</div>
+                                <div class="text-sm text-gray-600">I want to help organizations</div>
+                            </button>
+                            <button 
+                                @click="selectedRole = 'organization'" 
+                                :class="selectedRole === 'organization' ? 'border-orange-600 bg-orange-50' : 'border-gray-300'"
+                                class="p-4 border-2 rounded-lg text-left hover:border-orange-600 transition-colors">
+                                <div class="font-semibold text-gray-900 mb-1">Organization</div>
+                                <div class="text-sm text-gray-600">I want to find volunteers</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="handleRegister">
+                        <div class="space-y-4 mb-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                                    <input 
+                                        v-model="form.username" 
+                                        type="text" 
+                                        required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                                        placeholder="username">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                                    <input 
+                                        v-model="form.email" 
+                                        type="email" 
+                                        required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                                        placeholder="email@example.com">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                                <input 
+                                    v-model="form.full_name" 
+                                    type="text" 
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                                    placeholder="Full name">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                                <input 
+                                    v-model="form.password" 
+                                    type="password" 
+                                    required
+                                    minlength="8"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                                    placeholder="At least 8 characters">
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            :disabled="loading"
+                            class="w-full px-6 py-3 bg-orange-600 text-white rounded-md font-semibold hover:bg-orange-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-4">
+                            Create Account
+                        </button>
+
+                        <p class="text-center text-sm text-gray-600">
+                            Already have an account? 
+                            <a href="/login" class="text-orange-600 hover:text-orange-700 font-medium">Sign In</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sonner@1.3.1/dist/styles.css">
+    <script>
+    const { createApp } = Vue;
+    const { toast } = window.Sonner;
+
+    createApp({
+        data() {
+            return {
+                selectedRole: 'volunteer',
+                loading: false,
+                form: {
+                    email: '',
+                    username: '',
+                    password: '',
+                    full_name: '',
+                    role: 'volunteer'
+                }
+            };
+        },
+        watch: {
+            selectedRole(newRole) {
+                this.form.role = newRole;
+            }
+        },
+        methods: {
+            async handleRegister() {
+                this.loading = true;
+
+                try {
+                    const payload = {
+                        email: this.form.email,
+                        username: this.form.username,
+                        password: this.form.password,
+                        full_name: this.form.full_name,
+                        role: this.selectedRole
+                    };
+
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Server error occurred. Please try again later.');
+                    }
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.detail || 'Registration failed');
+                    }
+
+                    toast.success('Account created successfully!', { 
+                        description: 'Redirecting to login...'
+                    });
+                    
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+
+                } catch (err) {
+                    toast.error('Registration Failed', { 
+                        description: err.message
+                    });
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }).mount('#app');
+    </script>
+</body>
+</html>
