@@ -1,0 +1,21 @@
+{
+  "root": true,
+  "extends": [
+    "eslint:recommended",
+    "@vue/eslint-config-typescript",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "warn"
+  }
+}
+

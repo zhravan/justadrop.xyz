@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VOLUNTEER
+  ORGANIZATION
+  ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum OpportunityStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  role      UserRole @default(VOLUNTEER)
+  firstName String?
+  lastName  String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organization  Organization?
+  applications  Application[]
+  bookmarks     Bookmark[]
+
+  @@map("users")
+}
+
+model Organization {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+  name        String
+  description String?
+  website     String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@map("organizations")
+}
+
+model Opportunity {
+  id             String            @id @default(auto()) @map("_id") @db.ObjectId
+  organizationId String            @db.ObjectId
+  title          String
+  description    String
+  requirements   String?
+  location       String
+  city           String?
+  state          String?
+  isRemote       Boolean           @default(false)
+  startDate      DateTime?
+  endDate        DateTime?
+  hoursRequired  Int?
+  volunteersNeeded Int?
+  status         OpportunityStatus @default(DRAFT)
+  tags           String[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applications Application[]
+  bookmarks    Bookmark[]
+
+  @@map("opportunities")
+}
+
+model Application {
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  opportunityId String            @db.ObjectId
+  userId        String            @db.ObjectId
+  status        ApplicationStatus @default(PENDING)
+  message       String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, userId])
+  @@map("applications")
+}
+
+model Bookmark {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  opportunityId String   @db.ObjectId
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+  @@map("bookmarks")
+}
+
