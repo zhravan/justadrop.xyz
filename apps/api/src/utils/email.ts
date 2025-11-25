@@ -12,12 +12,19 @@ interface EmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, html }: EmailOptions) => {
+  console.log(' [sendEmail] Called with:');
+  console.log('   To:', to);
+  console.log('   Subject:', subject);
+  console.log('   RESEND_API_KEY configured:', !!RESEND_API_KEY);
+  console.log('   FROM_EMAIL:', FROM_EMAIL);
+
   if (!RESEND_API_KEY) {
-    console.warn('RESEND_API_KEY not configured. Email not sent.');
+    console.warn(' [sendEmail] RESEND_API_KEY not configured. Email not sent.');
     return { success: false, message: 'Email service not configured' };
   }
 
   try {
+    console.log(' [sendEmail] Calling Resend API...');
     const data = await resend.emails.send({
       from: FROM_EMAIL,
       to,
@@ -25,9 +32,10 @@ export const sendEmail = async ({ to, subject, html }: EmailOptions) => {
       html,
     });
 
+    console.log(' [sendEmail] Email sent successfully:', data);
     return { success: true, data };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error(' [sendEmail] Error sending email:', error);
     return { success: false, error };
   }
 };
@@ -134,6 +142,62 @@ export const sendApplicationStatusEmail = async (
       <p>Hi ${volunteerName},</p>
       <p>Your application for <strong>${opportunityTitle}</strong> has been reviewed.</p>
       <p>${message}</p>
+    `,
+  });
+};
+
+export const sendEmailVerification = async (
+  email: string,
+  name: string,
+  verificationToken: string
+) => {
+  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+
+  console.log('[sendEmailVerification] Preparing verification email');
+  console.log('   Email:', email);
+  console.log('   Name:', name);
+  console.log('   Verification URL:', verificationUrl);
+
+  return sendEmail({
+    to: email,
+    subject: 'Verify Your Email - Just a Drop',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #64748b; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Welcome to Just a Drop!</h1>
+            </div>
+            <div class="content">
+              <h2>Hi ${name},</h2>
+              <p>Thank you for registering as a volunteer with Just a Drop!</p>
+              <p>To complete your registration, please verify your email address by clicking the button below:</p>
+              <div style="text-align: center;">
+                <a href="${verificationUrl}" class="button">Verify Email Address</a>
+              </div>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #0ea5e9;">${verificationUrl}</p>
+              <p><strong>This link will expire in 24 hours.</strong></p>
+              <p>Once verified, you can start browsing and applying for volunteer opportunities in your area.</p>
+              <p>If you didn't create an account with Just a Drop, please ignore this email.</p>
+            </div>
+            <div class="footer">
+              <p>Just a Drop - Making a difference, one drop at a time</p>
+            </div>
+          </div>
+        </body>
+      </html>
     `,
   });
 };

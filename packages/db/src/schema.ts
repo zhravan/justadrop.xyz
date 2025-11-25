@@ -10,8 +10,17 @@ export const volunteers = pgTable('volunteers', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
-  skills: text('skills').array().notNull().default([]),
+  phone: text('phone').notNull(),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  pincode: text('pincode').notNull(),
+  interests: text('interests').array().notNull().default([]),
+  skills: text('skills'),
   availability: text('availability').notNull(),
+  bio: text('bio'),
+  experience: text('experience'),
+  motivation: text('motivation'),
+  email_verified: boolean('email_verified').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -61,4 +70,13 @@ export const applications = pgTable('applications', {
   message: text('message'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const verificationTokens = pgTable('verification_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  email: text('email').notNull(),
+  token: text('token').notNull().unique(),
+  type: text('type').notNull(), // 'email_verification' or 'password_reset'
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });

@@ -39,11 +39,11 @@ export function Header() {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden lg:flex items-center space-x-3">
-          <Button variant="ghost" size="sm" className="text-[#1e293b] hover:text-drop-500 hover:bg-drop-50">
-            Sign In
+          <Button variant="ghost" size="sm" className="text-[#1e293b] hover:text-drop-500 hover:bg-drop-50" asChild>
+            <Link href="/login">Sign In</Link>
           </Button>
-          <Button size="sm" className="bg-drop-500 hover:bg-drop-600 text-white">
-            Sign Up
+          <Button size="sm" className="bg-drop-500 hover:bg-drop-600 text-white" asChild>
+            <Link href="/register">Sign Up</Link>
           </Button>
         </div>
 
@@ -87,8 +87,12 @@ export function Header() {
               About Us
             </Link>
             <div className="pt-4 space-y-2">
-              <Button variant="ghost" size="sm" className="w-full">Sign In</Button>
-              <Button size="sm" className="w-full bg-drop-500 hover:bg-drop-600">Sign Up</Button>
+              <Button variant="ghost" size="sm" className="w-full" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button size="sm" className="w-full bg-drop-500 hover:bg-drop-600" asChild>
+                <Link href="/register">Sign Up</Link>
+              </Button>
             </div>
           </div>
         </div>
