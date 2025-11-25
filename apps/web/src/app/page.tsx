@@ -47,8 +47,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-white rounded-2xl shadow-2xl overflow-hidden border-8 border-white">
                 <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                   <div className="text-center p-8">
-                    <Users className="h-24 w-24 text-drop-500 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">Volunteers making an impact</p>
+                    <img src="https://media.istockphoto.com/id/472102653/photo/volunteers-helping-to-clean-up-the-beachduring-hindu-ganesha-festival.jpg?s=612x612&w=0&k=20&c=O3h-FkgpdqNbr74ecQNXATgo_ZPJXst-jUZRJAzeK0Q=" alt="Description of image" className="object-cover w-full h-full" />
                   </div>
                 </div>
               </div>
