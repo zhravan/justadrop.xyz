@@ -6,7 +6,7 @@ A platform connecting volunteers with organizations that need help.
 
 - Runtime: Bun (all-in-one JavaScript runtime)
 - Frontend: Next.js 14 (App Router) + React 18
-- UI: shadcn/ui + Tailwind CSS (Frappe-inspired design)
+- UI: shadcn/ui + Tailwind CSS
 - Backend: Elysia
 - Database: PostgreSQL + Drizzle ORM
 - Monorepo: Bun workspaces
@@ -122,29 +122,6 @@ FROM_EMAIL=noreply@yourdomain.com
 ```
 
 Note: Email sending will be skipped in development if RESEND_API_KEY is not configured.
-
-## UI Design System
-
-The frontend uses shadcn/ui components with Frappe-inspired design philosophy:
-
-**Design Principles:**
-
-- Clean, minimal interface
-- Neutral color palette (grays, blues)
-- Subtle shadows and borders
-- Generous whitespace
-- Clear typography hierarchy
-- Function over decoration
-
-**Available Components:**
-
-- Button (default, secondary, outline, ghost, destructive variants)
-- Card (with header, title, description, content, footer)
-- Input (text, email, etc.)
-
-**Adding New Components:**
-
-Components follow the shadcn/ui pattern and are located in `apps/web/src/components/ui/`. To add a new component, create it in this directory following the existing patterns.
 
 **Customization:**
 
