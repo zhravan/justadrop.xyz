@@ -10,7 +10,8 @@
     "@justadrop/db": "file:../../packages/db",
     "@justadrop/types": "file:../../packages/types",
     "elysia": "^1.1.0",
-    "@elysiajs/cors": "^1.1.0"
+    "@elysiajs/cors": "^1.1.0",
+    "@elysiajs/swagger": "^1.1.0"
   },
   "devDependencies": {
     "bun-types": "^1.1.0"

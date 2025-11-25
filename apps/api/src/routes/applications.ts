@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { db, applications } from '@justadrop/db';
 import { eq } from 'drizzle-orm';
 
-export const applicationsRouter = new Elysia({ prefix: '/applications' })
+export const applicationsRouter = new Elysia({ prefix: '/applications', tags: ['applications'] })
   .get('/', async () => {
     const allApplications = await db.select().from(applications);
     return allApplications;
