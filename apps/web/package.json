@@ -2,10 +2,10 @@
   "name": "@justadrop/web",
   "version": "1.0.0",
   "scripts": {
-    "dev": "bun --bun next dev",
-    "build": "bun --bun next build",
-    "start": "bun --bun next start",
-    "lint": "bun --bun next lint"
+    "dev": "bun next dev",
+    "build": "bun next build",
+    "start": "bun next start",
+    "lint": "bun next lint"
   },
   "dependencies": {
     "@justadrop/types": "file:../../packages/types",

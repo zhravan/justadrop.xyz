@@ -51,6 +51,11 @@ make db-generate
 make db-migrate
 ```
 
+Build packages (required before first run):
+```bash
+bun run build:packages
+```
+
 ## Development
 
 Start both frontend and backend:

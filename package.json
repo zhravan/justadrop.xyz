@@ -7,12 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
+    "dev": "concurrently \"bun:dev:*\"",
     "dev:web": "cd apps/web && bun run dev",
     "dev:api": "cd apps/api && bun run dev",
     "build": "bun run build:packages && bun run build:apps",
-    "build:packages": "bun run --filter './packages/*' build",
-    "build:apps": "bun run --filter './apps/*' build",
+    "build:packages": "cd packages/db && bun run build && cd ../types && bun run build",
+    "build:apps": "cd apps/api && bun run build && cd ../web && bun run build",
     "db:generate": "cd packages/db && bun run db:generate",
     "db:migrate": "cd packages/db && bun run db:migrate",
     "db:studio": "cd packages/db && bun run db:studio"
