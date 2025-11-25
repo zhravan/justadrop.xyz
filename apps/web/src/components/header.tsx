@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Menu, X, Heart } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Button } from './ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -13,9 +14,13 @@ export function Header() {
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="h-10 w-10 rounded-full bg-drop-500 flex items-center justify-center">
-            <Heart className="h-5 w-5 text-white fill-white" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="Just A Drop Logo"
+            width={40}
+            height={40}
+            className="h-10 w-10"
+          />
           <span className="font-bold text-xl text-[#1e293b]">Just A Drop</span>
         </Link>
 
