@@ -29,6 +29,9 @@ export function Header() {
           <Link href="/opportunities" className="text-base font-medium text-[#1e293b] transition-colors hover:text-drop-500">
             Opportunities
           </Link>
+          <Link href="/volunteers" className="text-base font-medium text-[#1e293b] transition-colors hover:text-drop-500">
+            Volunteers
+          </Link>
           <Link href="/about" className="text-base font-medium text-[#1e293b] transition-colors hover:text-drop-500">
             About Us
           </Link>
@@ -68,6 +71,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Opportunities
+            </Link>
+            <Link
+              href="/volunteers"
+              className="block py-2 text-base font-medium text-[#1e293b] transition-colors hover:text-drop-500"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Volunteers
             </Link>
             <Link
               href="/about"
