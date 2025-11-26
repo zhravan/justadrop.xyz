@@ -119,7 +119,10 @@ export default function VerifyEmailPage() {
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <p className="text-sm text-green-800">
-                      You can now sign in to your account and start exploring volunteer opportunities!
+                      {message.includes('organization')
+                        ? 'Your organization registration is pending admin approval. You will be notified once approved.'
+                        : 'You can now sign in to your account and start exploring volunteer opportunities!'
+                      }
                     </p>
                   </div>
 
@@ -150,15 +153,6 @@ export default function VerifyEmailPage() {
                   </div>
 
                   <div className="pt-4 space-y-3">
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Link href="/volunteer/register/success">
-                        Request New Verification Email
-                      </Link>
-                    </Button>
                     <Button
                       asChild
                       variant="ghost"

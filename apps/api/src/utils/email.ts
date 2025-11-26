@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
 // SMTP Configuration from environment variables
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -163,14 +163,25 @@ export const sendApplicationStatusEmail = async (
 export const sendEmailVerification = async (
   email: string,
   name: string,
-  verificationToken: string
+  verificationToken: string,
+  userType: 'volunteer' | 'organization' = 'volunteer'
 ) => {
   const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
 
   console.log('[sendEmailVerification] Preparing verification email');
   console.log('   Email:', email);
   console.log('   Name:', name);
+  console.log('   User Type:', userType);
   console.log('   Verification URL:', verificationUrl);
+
+  const volunteerMessage = 'Thank you for registering as a volunteer with Just a Drop!';
+  const organizationMessage = 'Thank you for registering your organization with Just a Drop!';
+
+  const volunteerNextSteps = 'Once verified, you can start browsing and applying for volunteer opportunities in your area.';
+  const organizationNextSteps = 'Once verified, our admin team will review your organization details. You will be notified once your organization is approved.';
+
+  const registrationMessage = userType === 'volunteer' ? volunteerMessage : organizationMessage;
+  const nextStepsMessage = userType === 'volunteer' ? volunteerNextSteps : organizationNextSteps;
 
   return sendEmail({
     to: email,
@@ -195,7 +206,7 @@ export const sendEmailVerification = async (
             </div>
             <div class="content">
               <h2>Hi ${name},</h2>
-              <p>Thank you for registering as a volunteer with Just a Drop!</p>
+              <p>${registrationMessage}</p>
               <p>To complete your registration, please verify your email address by clicking the button below:</p>
               <div style="text-align: center;">
                 <a href="${verificationUrl}" class="button">Verify Email Address</a>
@@ -203,7 +214,7 @@ export const sendEmailVerification = async (
               <p>Or copy and paste this link into your browser:</p>
               <p style="word-break: break-all; color: #0ea5e9;">${verificationUrl}</p>
               <p><strong>This link will expire in 24 hours.</strong></p>
-              <p>Once verified, you can start browsing and applying for volunteer opportunities in your area.</p>
+              <p>${nextStepsMessage}</p>
               <p>If you didn't create an account with Just a Drop, please ignore this email.</p>
             </div>
             <div class="footer">

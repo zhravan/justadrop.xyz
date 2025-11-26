@@ -4,8 +4,10 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 interface FormNavigationProps {
   currentStep: number
   totalSteps: number
-  onNext: () => void
-  onPrevious: () => void
+  onNext?: () => void
+  onBack?: () => void
+  onPrevious?: () => void
+  onSubmit?: () => void
   isSubmitting?: boolean
   canGoNext?: boolean
 }
@@ -14,12 +16,25 @@ export function FormNavigation({
   currentStep,
   totalSteps,
   onNext,
+  onBack,
   onPrevious,
+  onSubmit,
   isSubmitting = false,
   canGoNext = true,
 }: FormNavigationProps) {
   const isFirstStep = currentStep === 1
   const isLastStep = currentStep === totalSteps
+  
+  // Support both onBack and onPrevious for backwards compatibility
+  const handlePrevious = onBack || onPrevious
+
+  const handleNextOrSubmit = () => {
+    if (isLastStep && onSubmit) {
+      onSubmit()
+    } else if (onNext) {
+      onNext()
+    }
+  }
 
   return (
     <div className="flex items-center justify-between pt-8 border-t border-slate-200">
@@ -27,7 +42,7 @@ export function FormNavigation({
         <Button
           type="button"
           variant="outline"
-          onClick={onPrevious}
+          onClick={handlePrevious}
           disabled={isSubmitting}
           className="font-semibold"
         >
@@ -40,7 +55,7 @@ export function FormNavigation({
 
       <Button
         type="button"
-        onClick={onNext}
+        onClick={handleNextOrSubmit}
         disabled={isSubmitting || !canGoNext}
         className="bg-drop-500 hover:bg-drop-600 font-semibold"
       >

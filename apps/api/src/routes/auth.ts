@@ -55,7 +55,7 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
     console.log(' [Registration] Token:', verificationToken);
 
     // Send verification email
-    const emailResult = await sendEmailVerification(body.email, body.fullName, verificationToken);
+    const emailResult = await sendEmailVerification(body.email, body.fullName, verificationToken, 'volunteer');
 
     console.log(' [Registration] Email send result:', emailResult);
 
@@ -125,96 +125,295 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
 
   // Email Verification
   .get('/verify-email/:token', async ({ params, set }) => {
-    const { token } = params;
+    try {
+      const { token } = params;
 
-    // Find verification token
-    const tokenRecord = await db
-      .select()
-      .from(verificationTokens)
-      .where(eq(verificationTokens.token, token));
+      // Find verification token
+      const tokenRecord = await db
+        .select()
+        .from(verificationTokens)
+        .where(eq(verificationTokens.token, token));
 
-    // If token not found, check if it might have been already used
-    if (tokenRecord.length === 0) {
-      // Token doesn't exist - might have been already used or is invalid
-      // We can't check specific user without the email, so return helpful error
+      // If token not found, check if it might have been already used
+      if (tokenRecord.length === 0) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'This verification link is invalid or has already been used. If you already verified your email, please try logging in.',
+        };
+      }
+
+      const record = tokenRecord[0];
+
+      // Check if token is expired
+      if (new Date() > record.expiresAt) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'Verification token has expired. Please request a new verification email.',
+        };
+      }
+
+      // Check if it's an email verification token
+      if (record.type !== 'email_verification') {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'Invalid token type',
+        };
+      }
+
+      // Check for volunteer
+      const existingVolunteer = await db
+        .select()
+        .from(volunteers)
+        .where(eq(volunteers.email, record.email));
+
+      if (existingVolunteer.length > 0) {
+        if (existingVolunteer[0].email_verified) {
+          await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+          return {
+            success: true,
+            message: 'Email already verified! You can now log in.',
+          };
+        }
+        
+        // Update volunteer's email_verified status
+        await db
+          .update(volunteers)
+          .set({ email_verified: true, updatedAt: new Date() })
+          .where(eq(volunteers.email, record.email));
+
+        await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+
+        return {
+          success: true,
+          message: 'Email verified successfully! You can now log in.',
+        };
+      }
+
+      // Check for organization
+      const existingOrg = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.email, record.email));
+
+      if (existingOrg.length > 0) {
+        if (existingOrg[0].email_verified) {
+          await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+          return {
+            success: true,
+            message: 'Email already verified! Your organization registration is pending admin approval.',
+          };
+        }
+        
+        // Update organization's email_verified status
+        await db
+          .update(organizations)
+          .set({ email_verified: true, updatedAt: new Date() })
+          .where(eq(organizations.email, record.email));
+
+        await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+
+        return {
+          success: true,
+          message: 'Email verified successfully! Your organization registration is pending admin approval. You will be notified once approved.',
+        };
+      }
+
       set.status = 400;
-      throw new Error('This verification link is invalid or has already been used. If you already verified your email, please try logging in.');
-    }
-
-    const record = tokenRecord[0];
-
-    // Check if token is expired
-    if (new Date() > record.expiresAt) {
-      set.status = 400;
-      throw new Error('Verification token has expired. Please request a new verification email.');
-    }
-
-    // Check if it's an email verification token
-    if (record.type !== 'email_verification') {
-      set.status = 400;
-      throw new Error('Invalid token type');
-    }
-
-    // Check if email is already verified
-    const existingVolunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.email, record.email));
-
-    if (existingVolunteer.length > 0 && existingVolunteer[0].email_verified) {
-      // Already verified - delete the token and return success
-      await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
       return {
-        success: true,
-        message: 'Email already verified! You can now log in.',
+        success: false,
+        message: 'User not found',
+      };
+    } catch (error) {
+      set.status = 500;
+      return {
+        success: false,
+        message: 'An error occurred during verification. Please try again.',
       };
     }
-
-    // Update volunteer's email_verified status
-    await db
-      .update(volunteers)
-      .set({ email_verified: true, updatedAt: new Date() })
-      .where(eq(volunteers.email, record.email));
-
-    // Delete the used token
-    await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
-
-    return {
-      success: true,
-      message: 'Email verified successfully! You can now log in.',
-    };
   }, {
     params: t.Object({
       token: t.String(),
     }),
     detail: {
       summary: 'Verify email address',
-      description: 'Verify volunteer email using the token sent via email',
+      description: 'Verify volunteer or organization email using the token sent via email',
     }
   })
 
   // Resend Verification Email
   .post('/resend-verification', async ({ body }) => {
-    // Find volunteer by email
+    // Try to find volunteer first
     const volunteer = await db.select().from(volunteers).where(eq(volunteers.email, body.email));
 
-    if (volunteer.length === 0) {
-      throw new Error('Email not found');
+    if (volunteer.length > 0) {
+      // Check if already verified
+      if (volunteer[0].email_verified) {
+        throw new Error('Email is already verified');
+      }
+
+      // Delete any existing verification tokens for this email
+      await db.delete(verificationTokens).where(eq(verificationTokens.email, body.email));
+
+      // Generate new verification token
+      const verificationToken = createId();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+      // Save new verification token
+      await db.insert(verificationTokens).values({
+        email: body.email,
+        token: verificationToken,
+        type: 'email_verification',
+        expiresAt,
+      });
+
+      // Send verification email
+      await sendEmailVerification(body.email, volunteer[0].name, verificationToken, 'volunteer');
+
+      return {
+        success: true,
+        message: 'Verification email sent. Please check your inbox.',
+        userType: 'volunteer'
+      };
     }
 
-    // Check if already verified
-    if (volunteer[0].email_verified) {
-      throw new Error('Email is already verified');
+    // Try to find organization
+    const organization = await db.select().from(organizations).where(eq(organizations.email, body.email));
+
+    if (organization.length > 0) {
+      // Check if already verified
+      if (organization[0].verified) {
+        throw new Error('Email is already verified');
+      }
+
+      // Delete any existing verification tokens for this email
+      await db.delete(verificationTokens).where(eq(verificationTokens.email, body.email));
+
+      // Generate new verification token
+      const verificationToken = createId();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+      // Save new verification token
+      await db.insert(verificationTokens).values({
+        email: body.email,
+        token: verificationToken,
+        type: 'email_verification',
+        expiresAt,
+      });
+
+      // Send verification email
+      await sendEmailVerification(body.email, organization[0].name, verificationToken, 'organization');
+
+      return {
+        success: true,
+        message: 'Verification email sent. Please check your inbox.',
+        userType: 'organization'
+      };
     }
 
-    // Delete any existing verification tokens for this email
-    await db.delete(verificationTokens).where(eq(verificationTokens.email, body.email));
+    throw new Error('Email not found');
+  }, {
+    body: t.Object({
+      email: t.String(),
+    }),
+    detail: {
+      summary: 'Resend verification email',
+      description: 'Resend email verification link to volunteer or organization',
+    }
+  })
 
-    // Generate new verification token
+  // Organization Registration
+  .post('/organization/register', async ({ body }) => {
+    console.log('[Organization Registration] Received body:', JSON.stringify(body, null, 2));
+    console.log('[Organization Registration] organizationType value:', body.organizationType);
+
+    const existing = await db.select().from(organizations).where(eq(organizations.email, body.email));
+    if (existing.length > 0) {
+      throw new Error('Email already registered');
+    }
+
+    const password_hash = await Bun.password.hash(body.password);
+
+    // Parse social links if provided
+    const socialLinksJson = body.socialLinks ? JSON.stringify(body.socialLinks) : null;
+
+    const orgData = {
+      // Authentication
+      name: body.name,
+      email: body.email,
+      password_hash,
+
+      // Basic Information
+      description: body.description,
+      organization_type: body.organizationType || 'ngo',
+      year_established: body.yearEstablished,
+      registration_number: body.registrationNumber,
+      organization_size: body.organizationSize,
+
+      // Documents
+      registration_certificate_url: body.registrationCertificateUrl,
+      pan_url: body.panUrl || null,
+      certificate_80g_url: body.certificate80gUrl || null,
+      certificate_12a_url: body.certificate12aUrl || null,
+      address_proof_url: body.addressProofUrl || null,
+      csr_approval_certificate_url: body.csrApprovalCertificateUrl || null,
+      fcra_certificate_url: body.fcraRegistrationUrl || null,
+
+      // Location
+      city: body.city,
+      state: body.state,
+      country: body.country || 'India',
+
+      // Causes
+      causes: body.causes,
+
+      // Online Presence
+      website: body.website || null,
+      social_links: socialLinksJson,
+
+      // Volunteer Preferences
+      preferred_volunteer_type: body.preferredVolunteerType,
+
+      // Compliance
+      csr_eligible: body.csrEligible,
+      fcra_registered: body.fcraRegistered,
+
+      // Volunteer Requirements
+      age_restrictions: body.ageRestrictions || null,
+      gender_restrictions: body.genderRestrictions || null,
+      required_skills: body.requiredSkills || [],
+
+      // Contact Information
+      contact_name: body.contactName,
+      contact_email: body.contactEmail,
+      contact_phone: body.contactPhone,
+      contact_designation: body.contactDesignation,
+
+      // System fields
+      email_verified: false,
+    };
+
+    console.log('[Organization Registration] orgData before insertion:', JSON.stringify(orgData, null, 2));
+    console.log('[Organization Registration] organization_type field:', orgData.organization_type);
+
+    let newOrg;
+    try {
+      console.log('[Organization Registration] About to insert into database...');
+      newOrg = await db.insert(organizations).values(orgData).returning();
+      console.log('[Organization Registration] Database insertion successful!', newOrg);
+    } catch (dbError) {
+      console.error('[Organization Registration] Database insertion error:', dbError);
+      console.error('[Organization Registration] Error details:', JSON.stringify(dbError, null, 2));
+      throw dbError;
+    }
+
+    // Generate verification token
     const verificationToken = createId();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Save new verification token
+    // Save verification token (reusing the same table, adding org verification support)
     await db.insert(verificationTokens).values({
       email: body.email,
       token: verificationToken,
@@ -223,59 +422,87 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
     });
 
     // Send verification email
-    await sendEmailVerification(body.email, volunteer[0].name, verificationToken);
+    await sendEmailVerification(body.email, body.name, verificationToken, 'organization');
 
     return {
       success: true,
-      message: 'Verification email sent. Please check your inbox.',
-    };
-  }, {
-    body: t.Object({
-      email: t.String(),
-    }),
-    detail: {
-      summary: 'Resend verification email',
-      description: 'Resend email verification link to volunteer',
-    }
-  })
-
-  // Organization Registration
-  .post('/organization/register', async ({ body, jwt }) => {
-    const existing = await db.select().from(organizations).where(eq(organizations.email, body.email));
-    if (existing.length > 0) {
-      throw new Error('Email already registered');
-    }
-
-    const password_hash = await Bun.password.hash(body.password);
-    const newOrg = await db.insert(organizations).values({
-      name: body.name,
+      message: 'Registration successful! Please check your email to verify your account. Your organization will be reviewed by our admin team.',
       email: body.email,
-      password_hash,
-      description: body.description,
-      website: body.website,
-    }).returning();
-
-    const token = await jwt.sign({
-      id: newOrg[0].id,
-      type: 'organization'
-    });
-
-    return {
-      token,
-      user: { ...newOrg[0], password_hash: undefined },
-      message: 'Account created. Awaiting admin approval.'
+      organization: { ...newOrg[0], password_hash: undefined }
     };
   }, {
     body: t.Object({
-      name: t.String(),
+      // Authentication
+      name: t.String({ minLength: 2 }),
       email: t.String(),
       password: t.String({ minLength: 8 }),
-      description: t.String(),
+      
+      // Basic Information
+      description: t.String({ minLength: 10, maxLength: 500 }),
+      organizationType: t.Union([
+        t.Literal('ngo'),
+        t.Literal('trust'),
+        t.Literal('society'),
+        t.Literal('non_profit_company'),
+        t.Literal('section_8_company'),
+        t.Literal('other')
+      ]),
+      yearEstablished: t.String({ pattern: '^(19|20)\\d{2}$' }),
+      registrationNumber: t.String({ minLength: 5 }),
+      organizationSize: t.Union([
+        t.Literal('micro'),
+        t.Literal('small'),
+        t.Literal('medium'),
+        t.Literal('large')
+      ]),
+      
+      // Documents (URLs)
+      registrationCertificateUrl: t.String(),
+      panUrl: t.Optional(t.String()),
+      certificate80gUrl: t.Optional(t.String()),
+      certificate12aUrl: t.Optional(t.String()),
+      addressProofUrl: t.Optional(t.String()),
+      csrApprovalCertificateUrl: t.Optional(t.String()),
+      fcraRegistrationUrl: t.Optional(t.String()),
+      
+      // Location
+      city: t.String({ minLength: 2 }),
+      state: t.String({ minLength: 2 }),
+      country: t.Optional(t.String()),
+      
+      // Causes
+      causes: t.Array(t.String(), { minItems: 1 }),
+      
+      // Online Presence
       website: t.Optional(t.String()),
+      socialLinks: t.Optional(t.Object({
+        facebook: t.Optional(t.String()),
+        twitter: t.Optional(t.String()),
+        instagram: t.Optional(t.String()),
+        linkedin: t.Optional(t.String()),
+      })),
+      
+      // Volunteer Preferences
+      preferredVolunteerType: t.Array(t.String(), { minItems: 1 }),
+      
+      // Compliance
+      csrEligible: t.Boolean(),
+      fcraRegistered: t.Boolean(),
+      
+      // Volunteer Requirements
+      ageRestrictions: t.Optional(t.String()),
+      genderRestrictions: t.Optional(t.String()),
+      requiredSkills: t.Optional(t.Array(t.String())),
+      
+      // Contact Information
+      contactName: t.String({ minLength: 2 }),
+      contactEmail: t.String(),
+      contactPhone: t.String({ minLength: 10 }),
+      contactDesignation: t.String({ minLength: 2 }),
     }),
     detail: {
       summary: 'Register as organization',
-      description: 'Create a new organization account (requires admin approval)',
+      description: 'Create a new organization account (requires email verification and admin approval)',
     }
   })
 
@@ -286,13 +513,18 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
       throw new Error('Invalid credentials');
     }
 
-    if (org[0].approval_status === 'blacklisted') {
-      throw new Error('Account has been suspended');
-    }
-
     const isValid = await Bun.password.verify(body.password, org[0].password_hash);
     if (!isValid) {
       throw new Error('Invalid credentials');
+    }
+
+    // Check if email is verified
+    if (!org[0].email_verified) {
+      throw new Error('Please verify your email before logging in');
+    }
+
+    if (org[0].approval_status === 'blacklisted') {
+      throw new Error('Account has been suspended');
     }
 
     const token = await jwt.sign({
