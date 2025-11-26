@@ -1,9 +1,24 @@
-import { Resend } from 'resend';
+const nodemailer = require('nodemailer');
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+// SMTP Configuration from environment variables
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true'; // true for 465, false for other ports
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@justadrop.xyz';
+const FROM_NAME = process.env.FROM_NAME || 'Just a Drop';
 
-const resend = new Resend(RESEND_API_KEY);
+// Create transporter
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: {
+    user: SMTP_USER,
+    pass: SMTP_PASS,
+  },
+});
 
 interface EmailOptions {
   to: string;
@@ -12,36 +27,35 @@ interface EmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, html }: EmailOptions) => {
-  console.log(' [sendEmail] Called with:');
+  console.log('[sendEmail] Called with:');
   console.log('   To:', to);
   console.log('   Subject:', subject);
-  console.log('   RESEND_API_KEY configured:', !!RESEND_API_KEY);
+  console.log('   SMTP configured:', !!SMTP_USER && !!SMTP_PASS);
   console.log('   FROM_EMAIL:', FROM_EMAIL);
 
-  if (!RESEND_API_KEY) {
-    console.warn(' [sendEmail] RESEND_API_KEY not configured. Email not sent.');
+  if (!SMTP_USER || !SMTP_PASS) {
+    console.warn('[sendEmail] SMTP credentials not configured. Email not sent.');
     return { success: false, message: 'Email service not configured' };
   }
 
   try {
-    console.log(' [sendEmail] Calling Resend API...');
-    const data = await resend.emails.send({
-      from: FROM_EMAIL,
+    console.log('[sendEmail] Sending email via SMTP...');
+    const info = await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
       to,
       subject,
       html,
     });
 
-    console.log(' [sendEmail] Email sent successfully:', data);
-    return { success: true, data };
+    console.log('[sendEmail] Email sent successfully:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(' [sendEmail] Error sending email:', error);
+    console.error('[sendEmail] Error sending email:', error);
     return { success: false, error };
   }
 };
 
 // Email Templates
-
 export const sendWelcomeVolunteerEmail = async (email: string, name: string) => {
   return sendEmail({
     to: email,

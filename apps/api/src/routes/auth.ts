@@ -133,9 +133,12 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, token));
 
+    // If token not found, check if it might have been already used
     if (tokenRecord.length === 0) {
+      // Token doesn't exist - might have been already used or is invalid
+      // We can't check specific user without the email, so return helpful error
       set.status = 400;
-      throw new Error('Invalid or expired verification token');
+      throw new Error('This verification link is invalid or has already been used. If you already verified your email, please try logging in.');
     }
 
     const record = tokenRecord[0];
@@ -143,13 +146,28 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
     // Check if token is expired
     if (new Date() > record.expiresAt) {
       set.status = 400;
-      throw new Error('Verification token has expired');
+      throw new Error('Verification token has expired. Please request a new verification email.');
     }
 
     // Check if it's an email verification token
     if (record.type !== 'email_verification') {
       set.status = 400;
       throw new Error('Invalid token type');
+    }
+
+    // Check if email is already verified
+    const existingVolunteer = await db
+      .select()
+      .from(volunteers)
+      .where(eq(volunteers.email, record.email));
+
+    if (existingVolunteer.length > 0 && existingVolunteer[0].email_verified) {
+      // Already verified - delete the token and return success
+      await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+      return {
+        success: true,
+        message: 'Email already verified! You can now log in.',
+      };
     }
 
     // Update volunteer's email_verified status

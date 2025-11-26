@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +14,7 @@ export default function VerifyEmailPage() {
   const router = useRouter()
   const [status, setStatus] = useState<VerificationStatus>('verifying')
   const [message, setMessage] = useState('')
+  const hasVerified = useRef(false)
 
   useEffect(() => {
     const token = searchParams.get('token')
@@ -23,6 +24,12 @@ export default function VerifyEmailPage() {
       setMessage('Invalid verification link. No token provided.')
       return
     }
+
+    // Prevent duplicate API calls
+    if (hasVerified.current) {
+      return
+    }
+    hasVerified.current = true
 
     verifyEmail(token)
   }, [searchParams])
