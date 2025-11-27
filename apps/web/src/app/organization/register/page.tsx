@@ -244,9 +244,6 @@ export default function OrganizationRegisterPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-      console.log('[Organization Registration] Form data:', formData);
-      console.log('[Organization Registration] organizationType:', formData.organizationType);
-
       const payload = {
         name: formData.name,
         email: formData.email,
@@ -285,8 +282,6 @@ export default function OrganizationRegisterPage() {
         contactPhone: formData.contactPhone,
         contactDesignation: formData.contactDesignation,
       }
-
-      console.log('[Organization Registration] Payload to send:', JSON.stringify(payload, null, 2));
 
       const response = await fetch(`${API_URL}/auth/organization/register`, {
         method: 'POST',

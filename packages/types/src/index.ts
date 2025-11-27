@@ -19,25 +19,138 @@ export interface Organization {
   updatedAt: Date;
 }
 
+export type OpportunityMode = 'onsite' | 'remote' | 'hybrid';
+export type OpportunityDateType = 'single_day' | 'multi_day' | 'ongoing';
+export type OpportunityStatus = 'draft' | 'active' | 'closed';
+export type CreatorType = 'admin' | 'volunteer' | 'organization';
+export type ParticipantType = 'admin' | 'volunteer';
+export type ComputedStatus = 'upcoming' | 'active' | 'archived';
+
 export interface Opportunity {
   id: string;
-  organizationId: string;
+  
+  // Creator tracking
+  creatorType: CreatorType;
+  creatorId: string;
+  organizationId?: string;
+  
+  // Basic information
   title: string;
+  shortSummary: string;
   description: string;
+  causeCategory: string;
   skillsRequired: string[];
-  duration: string;
-  location: string;
-  status: 'open' | 'closed' | 'filled';
+  languagePreferences: string[];
+  
+  // Location & Mode
+  mode: OpportunityMode;
+  address?: string;
+  city: string;
+  state: string;
+  country: string;
+  osrmLink?: string;
+  
+  // Date & Time structure
+  dateType: OpportunityDateType;
+  startDate: Date;
+  endDate?: Date;
+  startTime?: string;
+  endTime?: string;
+  
+  // Participation settings
+  maxVolunteers?: number;
+  agePreference?: string;
+  genderPreference?: string;
+  certificateOffered: boolean;
+  stipendInfo?: string;
+  
+  // Contact information
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  
+  // Status
+  status: OpportunityStatus;
+  
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface Application {
+export interface OpportunityWithComputed extends Opportunity {
+  computedStatus: ComputedStatus;
+  participantCount: number;
+  isVerified: boolean;
+  canParticipate: boolean;
+  creator?: {
+    id: string;
+    name: string;
+    type: CreatorType;
+  };
+}
+
+export interface Participation {
   id: string;
-  volunteerId: string;
+  participantType: ParticipantType;
+  participantId: string;
   opportunityId: string;
   status: 'pending' | 'accepted' | 'rejected';
   message?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ParticipationWithDetails extends Participation {
+  opportunity?: OpportunityWithComputed;
+  participant?: {
+    id: string;
+    name: string;
+    type: ParticipantType;
+  };
+}
+
+// Keep legacy type for backward compatibility
+export interface Application extends Participation {
+  volunteerId: string;
+}
+
+// Request/Response types for API
+export interface CreateOpportunityRequest {
+  title: string;
+  shortSummary: string;
+  description: string;
+  causeCategory: string;
+  skillsRequired: string[];
+  languagePreferences: string[];
+  mode: OpportunityMode;
+  address?: string;
+  city: string;
+  state: string;
+  country: string;
+  osrmLink?: string;
+  dateType: OpportunityDateType;
+  startDate: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  maxVolunteers?: number;
+  agePreference?: string;
+  genderPreference?: string;
+  certificateOffered: boolean;
+  stipendInfo?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+}
+
+export interface OpportunityFilters {
+  mode?: OpportunityMode[];
+  verified?: boolean;
+  causeCategory?: string[];
+  city?: string;
+  state?: string;
+  skills?: string[];
+  status?: ComputedStatus[];
+  sortBy?: 'newest' | 'earliest' | 'popular';
+  page?: number;
+  limit?: number;
 }

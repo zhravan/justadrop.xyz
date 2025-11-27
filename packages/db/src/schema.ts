@@ -1,9 +1,13 @@
-import { pgTable, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, pgEnum, integer } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
-export const opportunityStatusEnum = pgEnum('opportunity_status', ['open', 'closed', 'filled']);
+export const opportunityStatusEnum = pgEnum('opportunity_status', ['draft', 'active', 'closed']);
 export const applicationStatusEnum = pgEnum('application_status', ['pending', 'accepted', 'rejected']);
 export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected', 'blacklisted']);
+export const opportunityModeEnum = pgEnum('opportunity_mode', ['onsite', 'remote', 'hybrid']);
+export const opportunityDateTypeEnum = pgEnum('opportunity_date_type', ['single_day', 'multi_day', 'ongoing']);
+export const creatorTypeEnum = pgEnum('creator_type', ['admin', 'volunteer', 'organization']);
+export const participantTypeEnum = pgEnum('participant_type', ['admin', 'volunteer']);
 
 export const volunteers = pgTable('volunteers', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
@@ -121,26 +125,67 @@ export const organizations = pgTable('organizations', {
 
 export const opportunities = pgTable('opportunities', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  
+  // Creator tracking (polymorphic)
+  creatorType: creatorTypeEnum('creator_type').notNull(),
+  creatorId: text('creator_id').notNull(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }), // Kept for backward compatibility
+  
+  // Basic information
   title: text('title').notNull(),
+  shortSummary: text('short_summary').notNull(),
   description: text('description').notNull(),
+  causeCategory: text('cause_category').notNull(),
   skillsRequired: text('skills_required').array().notNull().default([]),
-  duration: text('duration').notNull(),
-  location: text('location').notNull(),
-  status: opportunityStatusEnum('status').notNull().default('open'),
+  languagePreferences: text('language_preferences').array().notNull().default([]),
+  
+  // Location & Mode
+  mode: opportunityModeEnum('mode').notNull(),
+  address: text('address'),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  country: text('country').notNull().default('India'),
+  osrmLink: text('osrm_link'),
+  
+  // Date & Time structure
+  dateType: opportunityDateTypeEnum('date_type').notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date'),
+  startTime: text('start_time'),
+  endTime: text('end_time'),
+  
+  // Participation settings
+  maxVolunteers: integer('max_volunteers'),
+  agePreference: text('age_preference'),
+  genderPreference: text('gender_preference'),
+  certificateOffered: boolean('certificate_offered').notNull().default(false),
+  stipendInfo: text('stipend_info'),
+  
+  // Contact information
+  contactName: text('contact_name').notNull(),
+  contactEmail: text('contact_email').notNull(),
+  contactPhone: text('contact_phone').notNull(),
+  
+  // Status
+  status: opportunityStatusEnum('status').notNull().default('active'),
+  
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const applications = pgTable('applications', {
+export const participations = pgTable('participations', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  volunteerId: text('volunteer_id').notNull().references(() => volunteers.id, { onDelete: 'cascade' }),
+  participantType: participantTypeEnum('participant_type').notNull(),
+  participantId: text('participant_id').notNull(),
   opportunityId: text('opportunity_id').notNull().references(() => opportunities.id, { onDelete: 'cascade' }),
   status: applicationStatusEnum('status').notNull().default('pending'),
   message: text('message'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+// Keep legacy applications table name as alias for backward compatibility
+export const applications = participations;
 
 export const verificationTokens = pgTable('verification_tokens', {
   id: text('id').primaryKey().$defaultFn(() => createId()),

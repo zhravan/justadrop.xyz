@@ -7,6 +7,7 @@ import { volunteersRouter } from './routes/volunteers';
 import { organizationsRouter } from './routes/organizations';
 import { opportunitiesRouter } from './routes/opportunities';
 import { applicationsRouter } from './routes/applications';
+import { participationsRouter } from './routes/participations';
 
 const app = new Elysia()
   .use(cors())
@@ -24,7 +25,8 @@ const app = new Elysia()
           { name: 'volunteers', description: 'Volunteer endpoints' },
           { name: 'organizations', description: 'Organization endpoints' },
           { name: 'opportunities', description: 'Opportunity endpoints' },
-          { name: 'applications', description: 'Application endpoints' },
+          { name: 'applications', description: 'Application endpoints (legacy)' },
+          { name: 'participations', description: 'Participation endpoints' },
         ],
       },
     })
@@ -37,6 +39,7 @@ const app = new Elysia()
   .use(organizationsRouter)
   .use(opportunitiesRouter)
   .use(applicationsRouter)
+  .use(participationsRouter)
   .listen(3001);
 
 console.log(`API running at http://${app.server?.hostname}:${app.server?.port}`);
