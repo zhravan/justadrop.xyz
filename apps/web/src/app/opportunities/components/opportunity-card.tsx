@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { OpportunityWithComputed } from '@justadrop/types';
 import Link from 'next/link';
-import { Calendar, MapPin, Users, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, CheckCircle2, Monitor, Laptop, Globe } from 'lucide-react';
 
 interface OpportunityCardProps {
   opportunity: OpportunityWithComputed;
@@ -34,10 +34,15 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     archived: 'bg-gray-100 text-gray-800',
   };
 
-  const modeIcons = {
-    onsite: '📍',
-    remote: '💻',
-    hybrid: '🔄',
+  const getModeIcon = (mode: string) => {
+    switch (mode) {
+      case 'remote':
+        return <Laptop className="w-4 h-4 text-drop-600" />;
+      case 'hybrid':
+        return <Globe className="w-4 h-4 text-drop-600" />;
+      default:
+        return <MapPin className="w-4 h-4 text-drop-600" />;
+    }
   };
 
   return (
@@ -59,9 +64,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
       {/* Metadata */}
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-700">
-          <MapPin className="w-4 h-4 text-drop-600" />
+          {getModeIcon(mode)}
           <span>
-            {modeIcons[mode]} {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            {mode.charAt(0).toUpperCase() + mode.slice(1)}
             {(mode === 'onsite' || mode === 'hybrid') && city && state && (
               <> · {city}, {state}</>
             )}

@@ -23,6 +23,7 @@ import {
   Phone,
   User,
   ArrowLeft,
+  Languages,
 } from 'lucide-react';
 
 export default function OpportunityDetailPage() {
@@ -274,7 +275,7 @@ export default function OpportunityDetailPage() {
                 {/* Languages */}
                 {languagePreferences && languagePreferences.length > 0 && (
                   <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 mt-1">🗣️</div>
+                    <Languages className="w-5 h-5 text-drop-600 mt-1" />
                     <div>
                       <p className="font-semibold text-gray-900">Languages</p>
                       <p className="text-gray-700">{languagePreferences.join(', ')}</p>
