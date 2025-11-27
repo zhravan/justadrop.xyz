@@ -3,6 +3,15 @@ node_modules
 dist
 .env
 .env.local
+.env.production
 .DS_Store
 *.log
 drizzle
+
+# Database backups
+backup_*.sql
+
+# Docker volumes
+postgres_data/
+caddy_data/
+caddy_config/

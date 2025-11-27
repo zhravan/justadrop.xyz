@@ -148,3 +148,56 @@ Remove PostgreSQL container:
 ```bash
 make db-remove
 ```
+
+<details>
+
+<summary>
+  <strong> Production Deployment </strong>
+</summary>
+
+This is a Docker Compose setup with Caddy for production deployment. This is evolving architecture, so there could be changes as we improve and optimize the deployment process.
+
+### Steps to follow
+
+1. Copy production environment file:
+
+   ```bash
+   cp .env.production.example .env.production
+   ```
+
+2. Edit `.env.production` and set your production values (database password, JWT secret, SMTP credentials)
+
+3. Deploy:
+
+   ```bash
+   make prod-deploy
+   # or: ./deploy.sh deploy
+   ```
+
+### Management CMDs
+
+```bash
+make prod-deploy      # Deploy application
+make prod-redeploy    # Rebuild and redeploy
+make prod-stop        # Stop all services
+make prod-restart     # Restart services
+make prod-logs        # View logs
+make prod-status      # Check service status
+make prod-backup      # Backup database
+make prod-seed-admin  # Create admin user
+```
+
+### Services (Production Deployment Work In Progress)
+
+- **Frontend**: [https://justadrop.xyz](https://justadrop.xyz)
+- **API**: [https://api.justadrop.xyz](https://api.justadrop.xyz)
+- **API Docs**: [https://api.justadrop.xyz/swagger](https://api.justadrop.xyz/swagger)
+
+pillars of curent setup:
+
+- PSQL DB with persistent storage
+- Automatic HTTPS via Caddy
+- Health checks for all services
+- Docker Compose orchestration
+
+</details>
