@@ -60,11 +60,19 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          if git diff --quiet CHANGELOG.md; then
-            echo "No changelog changes"
+          # Check if CHANGELOG.md exists and has changes
+          if [ ! -f CHANGELOG.md ]; then
+            echo "CHANGELOG.md does not exist"
             exit 0
           fi
 
+          # Check for changes (add file first if untracked)
           git add CHANGELOG.md
+
+          if git diff --cached --quiet -- CHANGELOG.md; then
+            echo "No changelog changes to commit"
+            exit 0
+          fi
+
           git commit -m "docs: update CHANGELOG.md [skip ci]"
           git push
