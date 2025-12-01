@@ -123,12 +123,12 @@ export interface CreateOpportunityRequest {
   languagePreferences: string[];
   mode: OpportunityMode;
   address?: string;
-  city: string;
-  state: string;
-  country: string;
+  city?: string; // Optional for remote mode
+  state?: string; // Optional for remote mode
+  country?: string; // Optional for remote mode
   osrmLink?: string;
   dateType: OpportunityDateType;
-  startDate: string;
+  startDate?: string; // Optional for ongoing opportunities
   endDate?: string;
   startTime?: string;
   endTime?: string;

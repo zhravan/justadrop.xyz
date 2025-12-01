@@ -87,16 +87,40 @@ export default function CreateOpportunityForm() {
     setError('');
 
     try {
-      // Ensure all date fields are strings (from input type="date")
-      const submitData = {
-        ...formData,
-        startDate: formData.startDate || undefined,
-        endDate: formData.endDate || undefined,
-        startTime: formData.startTime || undefined,
-        endTime: formData.endTime || undefined,
+      // Prepare submission data with proper handling of optional fields
+      const submitData: CreateOpportunityRequest = {
+        title: formData.title,
+        shortSummary: formData.shortSummary,
+        description: formData.description,
+        causeCategory: formData.causeCategory,
+        skillsRequired: formData.skillsRequired || [],
+        languagePreferences: formData.languagePreferences || [],
+        mode: formData.mode,
+        // Address is optional for remote mode, required for onsite/hybrid
+        ...(formData.mode !== 'remote' && { address: formData.address }),
+        // City, state, country are optional for remote mode, required for onsite/hybrid
+        ...(formData.mode !== 'remote' && formData.city && { city: formData.city }),
+        ...(formData.mode !== 'remote' && formData.state && { state: formData.state }),
+        ...(formData.mode !== 'remote' && formData.country && { country: formData.country }),
+        ...(formData.osrmLink && { osrmLink: formData.osrmLink }),
+        dateType: formData.dateType,
+        // For ongoing opportunities, startDate is optional (backend will default to now)
+        // For single_day and multi_day, startDate is required
+        ...(formData.dateType !== 'ongoing' && formData.startDate && { startDate: formData.startDate }),
+        ...(formData.endDate && { endDate: formData.endDate }),
+        ...(formData.startTime && { startTime: formData.startTime }),
+        ...(formData.endTime && { endTime: formData.endTime }),
+        ...(formData.maxVolunteers !== undefined && { maxVolunteers: formData.maxVolunteers }),
+        ...(formData.agePreference && { agePreference: formData.agePreference }),
+        ...(formData.genderPreference && { genderPreference: formData.genderPreference }),
+        certificateOffered: formData.certificateOffered,
+        ...(formData.stipendInfo && { stipendInfo: formData.stipendInfo }),
+        contactName: formData.contactName!,
+        contactEmail: formData.contactEmail!,
+        contactPhone: formData.contactPhone!,
       };
       
-      await opportunitiesApi.create(submitData as CreateOpportunityRequest);
+      await opportunitiesApi.create(submitData);
       router.push('/opportunities?created=true');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create opportunity');
@@ -233,6 +257,14 @@ export default function CreateOpportunityForm() {
               </select>
             </div>
 
+            {formData.mode === 'remote' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Remote opportunities don't require a physical address. Volunteers can participate from anywhere.
+                </p>
+              </div>
+            )}
+
             {(formData.mode === 'onsite' || formData.mode === 'hybrid') && (
               <>
                 <div>
@@ -271,7 +303,7 @@ export default function CreateOpportunityForm() {
                   <Label htmlFor="country">Country *</Label>
                   <Input
                     id="country"
-                    value={formData.country || ''}
+                    value={formData.country || 'India'}
                     onChange={e => updateField('country', e.target.value)}
                     required
                   />
@@ -411,9 +443,32 @@ export default function CreateOpportunityForm() {
             )}
 
             {formData.dateType === 'ongoing' && (
-              <p className="text-sm text-gray-600">
-                No specific dates required for ongoing opportunities. Volunteers can apply anytime.
-              </p>
+              <>
+                <div>
+                  <Label htmlFor="startDate">Start Date (optional)</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate || ''}
+                    onChange={e => updateField('startDate', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave blank to start immediately, or set a future start date
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="endDate">End Date (optional)</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate || ''}
+                    onChange={e => updateField('endDate', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional end date for ongoing opportunities
+                  </p>
+                </div>
+              </>
             )}
             </div>
 

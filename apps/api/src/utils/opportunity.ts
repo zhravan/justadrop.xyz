@@ -5,6 +5,12 @@ import type { Opportunity, ComputedStatus, CreatorType, ParticipantType } from '
  */
 export function computeOpportunityStatus(opportunity: Opportunity): ComputedStatus {
   const now = new Date();
+  
+  // Handle ongoing opportunities without startDate
+  if (opportunity.dateType === 'ongoing' && !opportunity.startDate) {
+    return 'active';
+  }
+  
   const startDate = new Date(opportunity.startDate);
   const endDate = opportunity.endDate ? new Date(opportunity.endDate) : null;
 
@@ -26,7 +32,7 @@ export function computeOpportunityStatus(opportunity: Opportunity): ComputedStat
   }
 
   if (opportunity.dateType === 'ongoing') {
-    if (now < startDate) return 'upcoming';
+    if (startDate && now < startDate) return 'upcoming';
     if (!endDate || now <= endDate) return 'active';
     return 'archived';
   }
@@ -88,17 +94,18 @@ export function isVerifiedOpportunity(creatorType: CreatorType): boolean {
  */
 export function validateOpportunityDates(
   dateType: Opportunity['dateType'],
-  startDate: Date,
+  startDate?: Date,
   endDate?: Date
 ): { valid: boolean; error?: string } {
   const now = new Date();
 
-  // Start date cannot be in the past
-  if (startDate < now) {
-    return { valid: false, error: 'Start date cannot be in the past' };
-  }
-
   if (dateType === 'single_day') {
+    if (!startDate) {
+      return { valid: false, error: 'Start date is required for single day opportunities' };
+    }
+    if (startDate < now) {
+      return { valid: false, error: 'Start date cannot be in the past' };
+    }
     if (endDate) {
       return { valid: false, error: 'Single day opportunities should not have an end date' };
     }
@@ -106,6 +113,12 @@ export function validateOpportunityDates(
   }
 
   if (dateType === 'multi_day') {
+    if (!startDate) {
+      return { valid: false, error: 'Start date is required for multi-day opportunities' };
+    }
+    if (startDate < now) {
+      return { valid: false, error: 'Start date cannot be in the past' };
+    }
     if (!endDate) {
       return { valid: false, error: 'Multi-day opportunities must have an end date' };
     }
@@ -116,9 +129,19 @@ export function validateOpportunityDates(
   }
 
   if (dateType === 'ongoing') {
-    // End date is optional for ongoing
-    if (endDate && endDate <= startDate) {
-      return { valid: false, error: 'End date must be after start date' };
+    // Start date is optional for ongoing opportunities
+    if (startDate) {
+      if (startDate < now) {
+        return { valid: false, error: 'Start date cannot be in the past' };
+      }
+      // If endDate is provided, it must be after startDate
+      if (endDate && endDate <= startDate) {
+        return { valid: false, error: 'End date must be after start date' };
+      }
+    }
+    // If endDate is provided without startDate, validate it's in the future
+    if (endDate && !startDate && endDate < now) {
+      return { valid: false, error: 'End date cannot be in the past' };
     }
     return { valid: true };
   }
@@ -131,10 +154,66 @@ export function validateOpportunityDates(
  */
 export function validateOpportunityMode(
   mode: Opportunity['mode'],
-  address?: string
+  address?: string,
+  city?: string,
+  state?: string,
+  country?: string
 ): { valid: boolean; error?: string } {
-  if (mode === 'onsite' && !address) {
-    return { valid: false, error: 'Address is required for onsite opportunities' };
+  if (mode === 'onsite') {
+    if (!address) {
+      return { valid: false, error: 'Address is required for onsite opportunities' };
+    }
+    if (!city) {
+      return { valid: false, error: 'City is required for onsite opportunities' };
+    }
+    if (!state) {
+      return { valid: false, error: 'State is required for onsite opportunities' };
+    }
+    if (!country) {
+      return { valid: false, error: 'Country is required for onsite opportunities' };
+    }
   }
+  
+  if (mode === 'hybrid') {
+    if (!address) {
+      return { valid: false, error: 'Address is required for hybrid opportunities' };
+    }
+    if (!city) {
+      return { valid: false, error: 'City is required for hybrid opportunities' };
+    }
+    if (!state) {
+      return { valid: false, error: 'State is required for hybrid opportunities' };
+    }
+    if (!country) {
+      return { valid: false, error: 'Country is required for hybrid opportunities' };
+    }
+  }
+  
+  // Remote mode doesn't require address or location
+  return { valid: true };
+}
+
+/**
+ * Validate contact information
+ */
+export function validateContactInfo(
+  contactName: string,
+  contactEmail: string,
+  contactPhone: string
+): { valid: boolean; error?: string } {
+  if (!contactName || contactName.trim().length < 2) {
+    return { valid: false, error: 'Contact name must be at least 2 characters' };
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!contactEmail || !emailRegex.test(contactEmail)) {
+    return { valid: false, error: 'Invalid email address format' };
+  }
+  
+  const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+  if (!contactPhone || !phoneRegex.test(contactPhone) || contactPhone.replace(/\D/g, '').length < 10) {
+    return { valid: false, error: 'Invalid phone number format' };
+  }
+  
   return { valid: true };
 }
