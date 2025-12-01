@@ -6,9 +6,7 @@ export function DropPhilosophy() {
   return (
     <section className="py-20 md:py-32 bg-gradient-to-br from-slate-50 to-white relative overflow-hidden">
       {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #0ea5e9 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-      </div>
+      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle,#0ea5e9_1px,transparent_1px)] bg-[length:40px_40px]"></div>
 
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center max-w-6xl mx-auto">
@@ -18,9 +16,9 @@ export function DropPhilosophy() {
               {/* Animated ripples */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="absolute w-32 h-32 bg-drop-500 rounded-full opacity-80"></div>
-                <div className="absolute w-48 h-48 bg-drop-400 rounded-full opacity-50 animate-ping" style={{ animationDuration: '3s' }}></div>
-                <div className="absolute w-64 h-64 bg-drop-300 rounded-full opacity-30 animate-ping" style={{ animationDuration: '4s', animationDelay: '0.5s' }}></div>
-                <div className="absolute w-80 h-80 bg-drop-200 rounded-full opacity-20 animate-ping" style={{ animationDuration: '5s', animationDelay: '1s' }}></div>
+                <div className="absolute w-48 h-48 bg-drop-400 rounded-full opacity-50 animate-ping [animation-duration:3s]"></div>
+                <div className="absolute w-64 h-64 bg-drop-300 rounded-full opacity-30 animate-ping [animation-duration:4s] [animation-delay:0.5s]"></div>
+                <div className="absolute w-80 h-80 bg-drop-200 rounded-full opacity-20 animate-ping [animation-duration:5s] [animation-delay:1s]"></div>
               </div>
               
               {/* Center drop */}

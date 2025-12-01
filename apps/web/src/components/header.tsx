@@ -6,6 +6,7 @@ import { Button } from './ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/auth-context'
+import { getUserTypeBadgeColor } from '@/lib/utils/badge-colors'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -21,19 +22,6 @@ export function Header() {
   const getUserTypeLabel = () => {
     if (!userType) return ''
     return userType.charAt(0).toUpperCase() + userType.slice(1)
-  }
-
-  const getUserTypeBadgeColor = () => {
-    switch (userType) {
-      case 'volunteer':
-        return 'bg-blue-100 text-blue-700'
-      case 'organization':
-        return 'bg-green-100 text-green-700'
-      case 'admin':
-        return 'bg-purple-100 text-purple-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
-    }
   }
 
   return (
@@ -79,7 +67,7 @@ export function Header() {
                 </div>
                 <div className="text-left">
                   <div className="text-sm font-medium text-[#1e293b]">{user.name || user.email}</div>
-                  <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${getUserTypeBadgeColor()}`}>
+                  <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${getUserTypeBadgeColor(userType)}`}>
                     {getUserTypeLabel()}
                   </div>
                 </div>
@@ -174,7 +162,7 @@ export function Header() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-[#1e293b]">{user.name || user.email}</div>
-                      <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${getUserTypeBadgeColor()}`}>
+                      <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${getUserTypeBadgeColor(userType)}`}>
                         {getUserTypeLabel()}
                       </div>
                     </div>

@@ -11,9 +11,7 @@ export function CTASection() {
   return (
     <section className="py-20 md:py-32 bg-gradient-to-br from-drop-500 via-drop-600 to-drop-700 relative overflow-hidden">
       {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)', backgroundSize: '50px 50px' }}></div>
-      </div>
+      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle,white_2px,transparent_2px)] bg-[length:50px_50px]"></div>
 
       {/* Floating elements */}
       <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>

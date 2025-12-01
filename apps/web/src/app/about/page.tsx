@@ -6,7 +6,6 @@ import { FounderNote } from './components/founder-note'
 import { TwoPillars } from './components/two-pillars'
 import { ValuesSection } from './components/values-section'
 import { CTASection } from './components/cta-section'
-import './about.css'
 
 export const metadata: Metadata = {
   title: 'About Us - Just a Drop',

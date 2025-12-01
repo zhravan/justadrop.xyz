@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { OpportunityWithComputed } from '@justadrop/types';
 import Link from 'next/link';
-import { Calendar, MapPin, Users, Clock, CheckCircle2, Monitor, Laptop, Globe } from 'lucide-react';
+import { Calendar, MapPin, Users, CheckCircle2, Laptop, Globe, Award } from 'lucide-react';
+import { getStatusColors } from '@/lib/utils/badge-colors';
 
 interface OpportunityCardProps {
   opportunity: OpportunityWithComputed;
@@ -27,12 +28,6 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     startDate,
     certificateOffered,
   } = opportunity;
-
-  const statusColors = {
-    upcoming: 'bg-blue-100 text-blue-800',
-    active: 'bg-green-100 text-green-800',
-    archived: 'bg-gray-100 text-gray-800',
-  };
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -92,7 +87,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
       {/* Badges */}
       <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-        <Badge className={`${statusColors[computedStatus]} text-[10px] xs:text-xs px-2 py-0.5`}>
+        <Badge className={`${getStatusColors(computedStatus)} text-[10px] xs:text-xs px-2 py-0.5`}>
           {computedStatus.charAt(0).toUpperCase() + computedStatus.slice(1)}
         </Badge>
         <Badge variant="outline" className="capitalize text-[10px] xs:text-xs px-2 py-0.5">

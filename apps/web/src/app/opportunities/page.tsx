@@ -6,7 +6,9 @@ import type { OpportunityWithComputed, OpportunityFilters } from '@justadrop/typ
 import OpportunityCard from './components/opportunity-card';
 import FilterSidebar from './components/filter-sidebar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Plus, Briefcase, MapPin, Users, Award } from 'lucide-react';
@@ -123,19 +125,14 @@ export default function OpportunitiesPage() {
       <section className="container mx-auto px-3 sm:px-4 lg:px-8 -mt-4 sm:-mt-6 md:-mt-8 relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="border border-slate-200 sm:border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-shadow">
-              <CardContent className="p-3 sm:p-4 md:p-6 text-center">
-                <div className={`inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full ${stat.bgColor} mb-2 sm:mb-3`}>
-                  <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${stat.color}`} />
-                </div>
-                <div className="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 mb-0.5 sm:mb-1">
-                  {stat.value.toLocaleString()}
-                </div>
-                <div className="text-[10px] sm:text-xs md:text-sm text-slate-600 font-medium leading-tight">
-                  {stat.label}
-                </div>
-              </CardContent>
-            </Card>
+            <StatCard
+              key={index}
+              icon={stat.icon}
+              label={stat.label}
+              value={stat.value}
+              color={stat.color}
+              bgColor={stat.bgColor}
+            />
           ))}
         </div>
       </section>
@@ -177,27 +174,14 @@ export default function OpportunitiesPage() {
           {/* Opportunities Grid */}
           <div className="lg:col-span-3">
             {loading && opportunities.length === 0 ? (
-              <div className="text-center py-12 sm:py-16 md:py-20">
-                <div className="inline-block w-10 h-10 sm:w-12 sm:h-12 border-4 border-drop-600 border-t-transparent rounded-full animate-spin mb-3 sm:mb-4" />
-                <p className="text-sm sm:text-base text-slate-600 font-medium">Loading opportunities...</p>
-              </div>
+              <LoadingSpinner size="md" text="Loading opportunities..." className="py-12 sm:py-16 md:py-20" />
             ) : opportunities.length === 0 ? (
-              <div className="text-center py-12 sm:py-16 md:py-20">
-                <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 mb-4 sm:mb-6">
-                  <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
-                </div>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 mb-2 px-4">No opportunities found</h3>
-                <p className="text-sm sm:text-base text-slate-600 mb-4 sm:mb-6 px-4">
-                  Try adjusting your filters or check back later
-                </p>
-                <Button
-                  onClick={handleResetFilters}
-                  variant="outline"
-                  className="border-2 border-drop-300 hover:bg-drop-50 text-drop-700 font-semibold"
-                >
-                  Reset Filters
-                </Button>
-              </div>
+              <EmptyState
+                icon={Briefcase}
+                title="No opportunities found"
+                description="Try adjusting your filters or check back later"
+                action={{ label: 'Reset Filters', onClick: handleResetFilters }}
+              />
             ) : (
               <>
                 <div className="text-center mb-4 sm:mb-6 md:mb-8">
