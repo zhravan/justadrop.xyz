@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
+import { useGuestOnly } from '@/hooks/use-auth-redirect'
+import { authApi, ApiError } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { PageLoading } from '@/components/ui/page-loading'
 import { Droplet } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -16,15 +19,10 @@ type UserType = 'volunteer' | 'organization' | 'admin'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, isLoading, login } = useAuth()
+  const { login } = useAuth()
+  const { isLoading, shouldRender } = useGuestOnly('/')
+  
   const [userType, setUserType] = useState<UserType>('volunteer')
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.push('/')
-    }
-  }, [user, isLoading, router])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -35,33 +33,18 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const response = await authApi.login(userType, email, password, rememberMe)
+      
+      // Update auth context
+      login(response.token, response.user, userType, rememberMe)
 
-      const response = await fetch(`${API_URL}/auth/${userType}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Login failed')
-      }
-
-      // Use auth context to store login state
-      login(result.token, result.user, userType, rememberMe)
-
-      // Show success toast
-      toast.success(`Welcome back, ${result.user.name}!`)
-
-      // Redirect to home page (will implement dashboard routing later)
+      toast.success(`Welcome back, ${response.user.name}!`)
       router.push('/')
     } catch (error) {
       console.error('Login error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.'
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Login failed. Please try again.'
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -75,24 +58,17 @@ export default function LoginPage() {
       case 'organization':
         return '/organization/register'
       default:
-        return null // Admins don't have public registration
+        return null
     }
   }
 
   // Show loading state while checking auth
   if (isLoading) {
-    return (
-      <main className="flex-1 min-h-screen bg-gradient-to-b from-drop-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-drop-500"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </main>
-    )
+    return <PageLoading />
   }
 
   // Don't render login form if user is already logged in
-  if (user) {
+  if (!shouldRender) {
     return null
   }
 

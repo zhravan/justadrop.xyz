@@ -1,38 +1,22 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import { useGuestOnly } from '@/hooks/use-auth-redirect'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLoading } from '@/components/ui/page-loading'
 import { Heart, Building2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { user, isLoading } = useAuth()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.push('/')
-    }
-  }, [user, isLoading, router])
+  const { isLoading, shouldRender } = useGuestOnly('/')
 
   // Show loading state while checking auth
   if (isLoading) {
-    return (
-      <main className="flex-1 min-h-screen bg-gradient-to-b from-drop-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-drop-500"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </main>
-    )
+    return <PageLoading />
   }
 
   // Don't render register page if user is already logged in
-  if (user) {
+  if (!shouldRender) {
     return null
   }
 

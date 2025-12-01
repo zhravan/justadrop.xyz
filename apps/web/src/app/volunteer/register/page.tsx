@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -12,10 +12,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StepIndicator } from '@/components/multi-step-form/step-indicator'
 import { FormNavigation } from '@/components/multi-step-form/form-navigation'
+import { PageLoading } from '@/components/ui/page-loading'
 import { Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/auth-context'
+import { useGuestOnly } from '@/hooks/use-auth-redirect'
+import { authApi, ApiError } from '@/lib/api-client'
 import { toast } from 'sonner'
 
 // Form validation schema
@@ -81,14 +83,7 @@ export default function VolunteerRegisterPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
-  const { user, isLoading } = useAuth()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.push('/')
-    }
-  }, [user, isLoading, router])
+  const { isLoading, shouldRender } = useGuestOnly('/')
 
   const {
     register,
@@ -108,18 +103,11 @@ export default function VolunteerRegisterPage() {
 
   // Show loading state while checking auth
   if (isLoading) {
-    return (
-      <main className="flex-1 min-h-screen bg-gradient-to-b from-drop-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-drop-500"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </main>
-    )
+    return <PageLoading />
   }
 
   // Don't render register page if user is already logged in
-  if (user) {
+  if (!shouldRender) {
     return null
   }
 
@@ -165,36 +153,18 @@ export default function VolunteerRegisterPage() {
   const onSubmit = async (data: VolunteerFormData) => {
     setIsSubmitting(true)
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
-      // Remove confirmPassword before sending to API
+      // Remove confirmPassword and agreeToTerms before sending to API
       const { confirmPassword, agreeToTerms, ...registrationData } = data
 
-      const response = await fetch(`${API_URL}/auth/volunteer/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registrationData),
-      })
+      await authApi.registerVolunteer(registrationData)
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Registration failed')
-      }
-
-      // Store email in localStorage for resend functionality
-      localStorage.setItem('registrationEmail', data.email)
-
-      // Show success toast
       toast.success('Registration successful! Please check your email to verify your account.')
-
-      // Redirect to verification pending page
       router.push('/volunteer/register/success')
     } catch (error) {
       console.error('Registration error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.'
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Registration failed. Please try again.'
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)

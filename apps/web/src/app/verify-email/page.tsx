@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { authApi, ApiError } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
@@ -12,7 +13,6 @@ type VerificationStatus = 'verifying' | 'success' | 'error'
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [status, setStatus] = useState<VerificationStatus>('verifying')
   const [message, setMessage] = useState('')
   const hasVerified = useRef(false)
@@ -37,30 +37,18 @@ export default function VerifyEmailPage() {
 
   const verifyEmail = async (token: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
-      const response = await fetch(`${API_URL}/auth/verify-email/${token}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setStatus('success')
-        setMessage(result.message || 'Email verified successfully!')
-        toast.success('Email verified successfully!')
-      } else {
-        setStatus('error')
-        setMessage(result.message || 'Verification failed. Please try again.')
-        toast.error(result.message || 'Verification failed. Please try again.')
-      }
+      const result = await authApi.verifyEmail(token)
+      
+      setStatus('success')
+      setMessage(result.message || 'Email verified successfully!')
+      toast.success('Email verified successfully!')
     } catch (error) {
       setStatus('error')
-      setMessage('An error occurred during verification. Please try again.')
-      toast.error('An error occurred during verification. Please try again.')
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'An error occurred during verification. Please try again.'
+      setMessage(errorMessage)
+      toast.error(errorMessage)
       console.error('Verification error:', error)
     }
   }

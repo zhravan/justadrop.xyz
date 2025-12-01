@@ -6,20 +6,21 @@ import type {
   Participation,
   ParticipationWithDetails,
 } from '@justadrop/types';
+import { getAuthToken, setAuthData, clearAuthData, setRegistrationEmail, type UserType, type StoredUser } from './auth-storage';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// Helper to get auth token
-const getAuthToken = () => {
-  if (typeof window === 'undefined') return null;
-  // Check localStorage first (remember me)
-  let token = localStorage.getItem('authToken');
-  // If not in localStorage, check sessionStorage
-  if (!token) {
-    token = sessionStorage.getItem('authToken');
+// Error class for API errors
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public data?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
   }
-  return token;
-};
+}
 
 // Helper to handle API requests
 async function apiRequest<T>(
@@ -41,31 +42,192 @@ async function apiRequest<T>(
     headers,
   });
 
+  const data = await response.json().catch(() => ({ message: 'Request failed' }));
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || `Request failed with status ${response.status}`);
+    throw new ApiError(
+      data.message || `Request failed with status ${response.status}`,
+      response.status,
+      data
+    );
   }
 
-  return response.json();
+  return data;
 }
 
-// Opportunity API
+// Helper to build query params from filters
+function buildQueryParams(filters?: Record<string, any>): string {
+  if (!filters) return '';
+  
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v));
+      } else {
+        params.append(key, String(value));
+      }
+    }
+  });
+  
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : '';
+}
+
+// ============ Auth API ============
+
+interface LoginResponse {
+  token: string;
+  user: StoredUser;
+}
+
+interface RegisterResponse {
+  message: string;
+  user?: StoredUser;
+}
+
+export const authApi = {
+  /**
+   * Login for any user type (volunteer, organization, admin)
+   */
+  login: async (
+    userType: UserType,
+    email: string,
+    password: string,
+    remember: boolean = false
+  ): Promise<LoginResponse> => {
+    const response = await apiRequest<LoginResponse>(`/auth/${userType}/login`, {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    // Store auth data
+    setAuthData(response.token, response.user, userType, remember);
+
+    return response;
+  },
+
+  /**
+   * Register a volunteer
+   */
+  registerVolunteer: async (data: {
+    fullName: string;
+    email: string;
+    password: string;
+    phone: string;
+    city: string;
+    state: string;
+    pincode: string;
+    interests: string[];
+    skills?: string;
+    availability: string;
+    bio?: string;
+    experience?: string;
+    motivation?: string;
+  }): Promise<RegisterResponse> => {
+    const response = await apiRequest<RegisterResponse>('/auth/volunteer/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    // Store email for resend functionality
+    setRegistrationEmail(data.email);
+
+    return response;
+  },
+
+  /**
+   * Register an organization
+   */
+  registerOrganization: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    description: string;
+    organizationType: string;
+    yearEstablished: string;
+    registrationNumber: string;
+    organizationSize: string;
+    registrationCertificateUrl: string;
+    panUrl?: string;
+    certificate80gUrl?: string;
+    certificate12aUrl?: string;
+    addressProofUrl?: string;
+    csrApprovalCertificateUrl?: string;
+    fcraRegistrationUrl?: string;
+    city: string;
+    state: string;
+    country: string;
+    causes: string[];
+    website?: string;
+    socialLinks?: {
+      facebook?: string;
+      twitter?: string;
+      instagram?: string;
+      linkedin?: string;
+    };
+    preferredVolunteerType: string[];
+    csrEligible: boolean;
+    fcraRegistered: boolean;
+    ageRestrictions?: string;
+    genderRestrictions?: string;
+    requiredSkills?: string[];
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string;
+    contactDesignation: string;
+  }): Promise<RegisterResponse> => {
+    const response = await apiRequest<RegisterResponse>('/auth/organization/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    // Store email for resend functionality
+    setRegistrationEmail(data.email);
+
+    return response;
+  },
+
+  /**
+   * Verify email with token
+   */
+  verifyEmail: async (token: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/auth/verify-email/${token}`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Resend verification email
+   */
+  resendVerification: async (email: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  /**
+   * Get current user profile
+   */
+  getProfile: async (): Promise<{ user: StoredUser }> => {
+    return apiRequest<{ user: StoredUser }>('/auth/me');
+  },
+
+  /**
+   * Logout - clears auth data
+   */
+  logout: (): void => {
+    clearAuthData();
+  },
+};
+
+// ============ Opportunity API ============
+
 export const opportunitiesApi = {
   list: async (filters?: OpportunityFilters) => {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (Array.isArray(value)) {
-            value.forEach(v => params.append(key, v));
-          } else {
-            params.append(key, String(value));
-          }
-        }
-      });
-    }
     return apiRequest<{ opportunities: OpportunityWithComputed[]; total: number }>(
-      `/opportunities?${params.toString()}`
+      `/opportunities${buildQueryParams(filters)}`
     );
   },
 
@@ -96,7 +258,8 @@ export const opportunitiesApi = {
   },
 };
 
-// Participation API
+// ============ Participation API ============
+
 export const participationsApi = {
   apply: async (opportunityId: string, message?: string) => {
     return apiRequest<{ participation: Participation }>(
@@ -109,9 +272,8 @@ export const participationsApi = {
   },
 
   myParticipations: async (status?: string) => {
-    const params = status ? `?status=${status}` : '';
     return apiRequest<{ participations: ParticipationWithDetails[] }>(
-      `/participations/my-participations${params}`
+      `/participations/my-participations${buildQueryParams({ status })}`
     );
   },
 
@@ -144,36 +306,30 @@ export const participationsApi = {
   },
 };
 
-// Auth API
-export const authApi = {
-  login: async (email: string, password: string) => {
-    const response = await apiRequest<{
-      token: string;
-      user: { id: string; email: string; type: 'admin' | 'volunteer' | 'organization' };
-    }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    // Note: Token storage is now handled by AuthContext
-    // This is kept for backward compatibility
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', response.token);
-    }
-    
-    return response;
+// ============ Volunteers API ============
+
+export const volunteersApi = {
+  list: async (filters?: Record<string, any>) => {
+    return apiRequest<{ volunteers: any[]; total: number }>(
+      `/volunteers${buildQueryParams(filters)}`
+    );
   },
 
-  logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
-    }
+  get: async (id: string) => {
+    return apiRequest<{ volunteer: any }>(`/volunteers/${id}`);
+  },
+};
+
+// ============ Organizations API ============
+
+export const organizationsApi = {
+  list: async (filters?: Record<string, any>) => {
+    return apiRequest<{ organizations: any[]; total: number }>(
+      `/organizations${buildQueryParams(filters)}`
+    );
   },
 
-  getProfile: async () => {
-    return apiRequest<{
-      user: { id: string; email: string; type: 'admin' | 'volunteer' | 'organization' };
-    }>('/auth/me');
+  get: async (id: string) => {
+    return apiRequest<{ organization: any }>(`/organizations/${id}`);
   },
 };
