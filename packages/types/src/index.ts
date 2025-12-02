@@ -154,3 +154,6 @@ export interface OpportunityFilters {
   page?: number;
   limit?: number;
 }
+
+// Export validation utilities
+export * from './validation';

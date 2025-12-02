@@ -6,6 +6,15 @@ import {
   validateOpportunityMode,
   validateContactInfo,
 } from '../utils/opportunity';
+import { 
+  validateOpportunityForm,
+  validateTitle,
+  validateShortSummary,
+  validateDescription,
+  validateMaxVolunteers,
+  validateUrl,
+  type OpportunityFormData 
+} from '@justadrop/types';
 import type { CreateOpportunityRequest } from '@justadrop/types';
 
 export class OpportunityService {
@@ -19,7 +28,40 @@ export class OpportunityService {
   ) {
     log.info('Creating opportunity', { title: data.title, creatorType, creatorId });
 
-    // Validate dates
+    // Comprehensive validation using shared validation functions
+    const formData: OpportunityFormData = {
+      title: data.title,
+      shortSummary: data.shortSummary,
+      description: data.description,
+      causeCategory: data.causeCategory,
+      mode: data.mode,
+      dateType: data.dateType,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      osrmLink: data.osrmLink,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      maxVolunteers: data.maxVolunteers,
+      contactName: data.contactName,
+      contactEmail: data.contactEmail,
+      contactPhone: data.contactPhone,
+    };
+
+    // Validate the entire form
+    const validation = validateOpportunityForm(formData);
+    
+    if (!validation.valid) {
+      const errorMessages = Object.entries(validation.errors)
+        .map(([field, error]) => `${field}: ${error}`)
+        .join('; ');
+      throw new Error(`Validation failed: ${errorMessages}`);
+    }
+
+    // Additional backend-specific validations
     const startDateObj = data.startDate ? new Date(data.startDate) : undefined;
     const endDateObj = data.endDate ? new Date(data.endDate) : undefined;
 
@@ -33,7 +75,6 @@ export class OpportunityService {
       throw new Error(dateValidation.error);
     }
 
-    // Validate mode/address
     const modeValidation = validateOpportunityMode(
       data.mode,
       data.address,
@@ -46,7 +87,6 @@ export class OpportunityService {
       throw new Error(modeValidation.error);
     }
 
-    // Validate contact information
     const contactValidation = validateContactInfo(
       data.contactName,
       data.contactEmail,
@@ -55,6 +95,14 @@ export class OpportunityService {
 
     if (!contactValidation.valid) {
       throw new Error(contactValidation.error);
+    }
+
+    // Validate URL if provided
+    if (data.osrmLink) {
+      const urlValidation = validateUrl(data.osrmLink);
+      if (!urlValidation.valid) {
+        throw new Error(urlValidation.error);
+      }
     }
 
     // Set organizationId if creator is organization

@@ -1,12 +1,33 @@
-node_modules
-.next
-dist
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+.next/
+**/.next/
+dist/
+**/dist/
+
+# Environment files
 .env
 .env.local
 .env.production
+**/.env
+**/.env.local
+**/.env.production
+
+# OS files
 .DS_Store
+**/.DS_Store
+Thumbs.db
+**/Thumbs.db
+
+# Logs
 *.log
-drizzle
+**/*.log
+
+# Drizzle
+drizzle/
 
 # Database backups
 backup_*.sql
@@ -15,3 +36,33 @@ backup_*.sql
 postgres_data/
 caddy_data/
 caddy_config/
+
+# TypeScript build info
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# IDE
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.swp
+*.swo
+**/*.swp
+**/*.swo
+
+# Test coverage
+coverage/
+**/coverage/
+
+# Temporary files
+*.tmp
+*.temp
+**/*.tmp
+**/*.temp
+
+# Cache
+.cache/
+**/.cache/
+.turbo/
+**/.turbo/

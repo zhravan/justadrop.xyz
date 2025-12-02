@@ -7,6 +7,7 @@ import {
   isVerifiedOpportunity,
 } from '../utils/opportunity';
 import type { OpportunityWithComputed, ParticipantType, Opportunity } from '@justadrop/types';
+import { OPPORTUNITY_VALIDATION } from '@justadrop/types';
 import { authMiddleware, requireAuth } from '../middleware/auth';
 import { OpportunityController } from '../controllers/opportunity.controller';
 import { log } from '../utils/logger';
@@ -221,20 +222,48 @@ export const opportunitiesRouter = new Elysia({ prefix: '/opportunities', tags: 
   })
   
   // Create new opportunity (Protected - requires auth)
-  .use(requireAuth)
-  .post('/', async ({ body, user, userId, userType }: any) => {
-    if (!user || !userId || !userType) {
-      throw new Error('Authentication required');
+  .post('/', async ({ body, headers, set }: any) => {
+    const authHeader = headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      set.status = 401;
+      return { error: 'Authentication required' };
     }
 
-    log.info('Creating opportunity', { userId, userType, title: body.title });
+    try {
+      const token = authHeader.substring(7);
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+      
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      
+      if (!payload.id || !payload.type) {
+        set.status = 401;
+        return { error: 'Authentication required' };
+      }
 
-    return await opportunityController.createOpportunity(body, userId, userType);
+      log.info('Creating opportunity', { userId: payload.id, userType: payload.type, title: body.title });
+      return await opportunityController.createOpportunity(body, payload.id, payload.type);
+    } catch (error) {
+      set.status = 401;
+      return { error: 'Authentication required' };
+    }
   }, {
     body: t.Object({
-      title: t.String({ minLength: 3, maxLength: 200 }),
-      shortSummary: t.String({ minLength: 10, maxLength: 500 }),
-      description: t.String({ minLength: 50 }),
+      title: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.title.minLength, 
+        maxLength: OPPORTUNITY_VALIDATION.title.maxLength 
+      }),
+      shortSummary: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.shortSummary.minLength, 
+        maxLength: OPPORTUNITY_VALIDATION.shortSummary.maxLength 
+      }),
+      description: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.description.minLength,
+        maxLength: OPPORTUNITY_VALIDATION.description.maxLength
+      }),
       causeCategory: t.String(),
       skillsRequired: t.Array(t.String()),
       languagePreferences: t.Array(t.String()),
@@ -249,31 +278,63 @@ export const opportunitiesRouter = new Elysia({ prefix: '/opportunities', tags: 
       endDate: t.Optional(t.String()),
       startTime: t.Optional(t.String()),
       endTime: t.Optional(t.String()),
-      maxVolunteers: t.Optional(t.Number()),
+      maxVolunteers: t.Optional(t.Number({ 
+        minimum: OPPORTUNITY_VALIDATION.maxVolunteers.min,
+        maximum: OPPORTUNITY_VALIDATION.maxVolunteers.max
+      })),
       agePreference: t.Optional(t.String()),
       genderPreference: t.Optional(t.String()),
       certificateOffered: t.Boolean(),
       stipendInfo: t.Optional(t.String()),
-      contactName: t.String({ minLength: 2 }),
+      contactName: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.contactName.minLength 
+      }),
       contactEmail: t.String(),
-      contactPhone: t.String({ minLength: 10 }),
+      contactPhone: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.contactPhone.minLength 
+      }),
     })
   })
   
   // Update opportunity (Protected - only by creator)
-  .patch('/:id', async ({ params: { id }, body, userId }: any) => {
-    if (!userId) {
-      throw new Error('Authentication required');
+  .patch('/:id', async ({ params: { id }, body, headers, set }: any) => {
+    // Manual JWT verification
+    const authHeader = headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      set.status = 401;
+      return { error: 'Authentication required' };
     }
 
-    log.info('Updating opportunity', { opportunityId: id, userId });
+    try {
+      const token = authHeader.substring(7);
+      const parts = token.split('.');
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      
+      if (!payload.id) {
+        set.status = 401;
+        return { error: 'Authentication required' };
+      }
 
-    return await opportunityController.updateOpportunity(id, body, userId);
+      log.info('Updating opportunity', { opportunityId: id, userId: payload.id });
+      return await opportunityController.updateOpportunity(id, body, payload.id);
+    } catch (error) {
+      set.status = 401;
+      return { error: 'Authentication required' };
+    }
   }, {
     body: t.Partial(t.Object({
-      title: t.String({ minLength: 3, maxLength: 200 }),
-      shortSummary: t.String({ minLength: 10, maxLength: 500 }),
-      description: t.String({ minLength: 50 }),
+      title: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.title.minLength, 
+        maxLength: OPPORTUNITY_VALIDATION.title.maxLength 
+      }),
+      shortSummary: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.shortSummary.minLength, 
+        maxLength: OPPORTUNITY_VALIDATION.shortSummary.maxLength 
+      }),
+      description: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.description.minLength,
+        maxLength: OPPORTUNITY_VALIDATION.description.maxLength 
+      }),
       causeCategory: t.String(),
       skillsRequired: t.Array(t.String()),
       languagePreferences: t.Array(t.String()),
@@ -288,25 +349,48 @@ export const opportunitiesRouter = new Elysia({ prefix: '/opportunities', tags: 
       endDate: t.Optional(t.String()),
       startTime: t.Optional(t.String()),
       endTime: t.Optional(t.String()),
-      maxVolunteers: t.Optional(t.Number()),
+      maxVolunteers: t.Optional(t.Number({ 
+        minimum: OPPORTUNITY_VALIDATION.maxVolunteers.min,
+        maximum: OPPORTUNITY_VALIDATION.maxVolunteers.max
+      })),
       agePreference: t.Optional(t.String()),
       genderPreference: t.Optional(t.String()),
       certificateOffered: t.Boolean(),
       stipendInfo: t.Optional(t.String()),
-      contactName: t.String({ minLength: 2 }),
+      contactName: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.contactName.minLength 
+      }),
       contactEmail: t.String(),
-      contactPhone: t.String({ minLength: 10 }),
+      contactPhone: t.String({ 
+        minLength: OPPORTUNITY_VALIDATION.contactPhone.minLength 
+      }),
       status: t.Union([t.Literal('draft'), t.Literal('active'), t.Literal('closed')]),
     }))
   })
   
   // Delete opportunity (Protected - only by creator)
-  .delete('/:id', async ({ params: { id }, userId }: any) => {
-    if (!userId) {
-      throw new Error('Authentication required');
+  .delete('/:id', async ({ params: { id }, headers, set }: any) => {
+    // Manual JWT verification
+    const authHeader = headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      set.status = 401;
+      return { error: 'Authentication required' };
     }
 
-    log.info('Deleting opportunity', { opportunityId: id, userId });
+    try {
+      const token = authHeader.substring(7);
+      const parts = token.split('.');
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      
+      if (!payload.id) {
+        set.status = 401;
+        return { error: 'Authentication required' };
+      }
 
-    return await opportunityController.deleteOpportunity(id, userId);
+      log.info('Deleting opportunity', { opportunityId: id, userId: payload.id });
+      return await opportunityController.deleteOpportunity(id, payload.id);
+    } catch (error) {
+      set.status = 401;
+      return { error: 'Authentication required' };
+    }
   });

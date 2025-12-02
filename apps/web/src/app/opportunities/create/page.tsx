@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { opportunitiesApi } from '@/lib/api-client';
 import type { CreateOpportunityRequest } from '@justadrop/types';
+import { 
+  validateOpportunityField,
+  validateOpportunityForm,
+  OPPORTUNITY_VALIDATION,
+  VALIDATION_MESSAGES,
+  type OpportunityFormData 
+} from '@justadrop/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { StepIndicator } from '@/components/multi-step-form/step-indicator';
 import { FormNavigation } from '@/components/multi-step-form/form-navigation';
-import { Briefcase, MapPin, Calendar, Users, Award, CheckCircle2 } from 'lucide-react';
+import { Briefcase, MapPin, Calendar, Users, Award, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type OpportunityFormData = Partial<Omit<CreateOpportunityRequest, 'creatorType' | 'creatorId'>> & {
   title: string;
@@ -23,6 +30,10 @@ type OpportunityFormData = Partial<Omit<CreateOpportunityRequest, 'creatorType' 
   causeCategory: string;
   mode: 'onsite' | 'remote' | 'hybrid';
   dateType: 'single_day' | 'multi_day' | 'ongoing';
+};
+
+type ValidationErrors = {
+  [key: string]: string;
 };
 
 const initialFormData: OpportunityFormData = {
@@ -49,6 +60,8 @@ const STEPS = [
 export default function CreateOpportunityForm() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<OpportunityFormData>(initialFormData);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -78,11 +91,111 @@ export default function CreateOpportunityForm() {
     return null;
   }
 
+  const FieldError = ({ field }: { field: string }) => {
+    if (!touchedFields.has(field) || !validationErrors[field]) {
+      return null;
+    }
+    return (
+      <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
+        <AlertCircle className="w-4 h-4" />
+        <span>{validationErrors[field]}</span>
+      </div>
+    );
+  };
+
+  const getFieldClassName = (field: string) => {
+    const baseClass = "w-full border rounded-md p-2";
+    if (touchedFields.has(field) && validationErrors[field]) {
+      return `${baseClass} border-red-500 focus:border-red-500 focus:ring-red-500`;
+    }
+    return `${baseClass} border-gray-300`;
+  };
+
   const updateField = (field: keyof OpportunityFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Mark field as touched
+    setTouchedFields(prev => new Set(prev).add(field));
+    
+    // Validate the specific field
+    const error = validateOpportunityField(field, value, { ...formData, [field]: value } as any);
+    
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      if (error) {
+        newErrors[field] = error;
+      } else {
+        delete newErrors[field];
+      }
+      return newErrors;
+    });
+  };
+
+  const validateStep = (stepNumber: number): boolean => {
+    const fieldsToValidate: string[] = [];
+    
+    switch (stepNumber) {
+      case 1:
+        fieldsToValidate.push('title', 'shortSummary', 'description');
+        break;
+      case 2:
+        fieldsToValidate.push('mode');
+        if (formData.mode !== 'remote') {
+          fieldsToValidate.push('address', 'city', 'state', 'country');
+        }
+        if (formData.osrmLink) {
+          fieldsToValidate.push('osrmLink');
+        }
+        break;
+      case 3:
+        fieldsToValidate.push('dateType');
+        if (formData.dateType === 'single_day') {
+          fieldsToValidate.push('startDate');
+        } else if (formData.dateType === 'multi_day') {
+          fieldsToValidate.push('startDate', 'endDate');
+        }
+        break;
+      case 4:
+        fieldsToValidate.push('maxVolunteers', 'contactName', 'contactEmail', 'contactPhone');
+        break;
+    }
+    
+    let hasErrors = false;
+    const newErrors: ValidationErrors = { ...validationErrors };
+    
+    fieldsToValidate.forEach(field => {
+      const value = formData[field as keyof OpportunityFormData];
+      const error = validateOpportunityField(field, value, formData as any);
+      if (error) {
+        newErrors[field] = error;
+        hasErrors = true;
+      }
+      setTouchedFields(prev => new Set(prev).add(field));
+    });
+    
+    setValidationErrors(newErrors);
+    return !hasErrors;
+  };
+
+  const handleNext = (currentStep: number) => {
+    if (validateStep(currentStep)) {
+      setStep(currentStep + 1);
+    }
   };
 
   const handleSubmit = async () => {
+    // Validate the entire form before submission
+    const validation = validateOpportunityForm(formData as any);
+    
+    if (!validation.valid) {
+      setValidationErrors(validation.errors);
+      setError('Please fix all validation errors before submitting');
+      // Mark all fields as touched to show errors
+      const allFields = Object.keys(validation.errors);
+      setTouchedFields(new Set(allFields));
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -153,8 +266,26 @@ export default function CreateOpportunityForm() {
 
             <CardContent>
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded">
-                  {error}
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-red-900 mb-1">Error</h3>
+                      <p className="text-red-700 text-sm">{error}</p>
+                      {Object.keys(validationErrors).length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-red-200">
+                          <p className="text-sm font-medium text-red-900 mb-2">Validation Errors:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            {Object.entries(validationErrors).map(([field, message]) => (
+                              <li key={field} className="text-sm text-red-700">
+                                <span className="font-medium capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</span> {message}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -170,37 +301,70 @@ export default function CreateOpportunityForm() {
 
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="title">Opportunity Title *</Label>
+                      <Label htmlFor="title">
+                        Opportunity Title * 
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({OPPORTUNITY_VALIDATION.title.minLength}-{OPPORTUNITY_VALIDATION.title.maxLength} characters)
+                        </span>
+                      </Label>
                       <Input
                         id="title"
                         value={formData.title}
                         onChange={e => updateField('title', e.target.value)}
+                        onBlur={() => setTouchedFields(prev => new Set(prev).add('title'))}
                         placeholder="e.g., Beach Cleanup Drive"
+                        className={getFieldClassName('title')}
                         required
                       />
+                      <FieldError field="title" />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.title.length}/{OPPORTUNITY_VALIDATION.title.maxLength}
+                      </p>
                     </div>
 
                     <div>
-                      <Label htmlFor="shortSummary">Short Summary *</Label>
+                      <Label htmlFor="shortSummary">
+                        Short Summary *
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({OPPORTUNITY_VALIDATION.shortSummary.minLength}-{OPPORTUNITY_VALIDATION.shortSummary.maxLength} characters)
+                        </span>
+                      </Label>
                       <Input
                         id="shortSummary"
                         value={formData.shortSummary}
                         onChange={e => updateField('shortSummary', e.target.value)}
+                        onBlur={() => setTouchedFields(prev => new Set(prev).add('shortSummary'))}
                         placeholder="Brief one-line description"
+                        className={getFieldClassName('shortSummary')}
                         required
                       />
+                      <FieldError field="shortSummary" />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.shortSummary.length}/{OPPORTUNITY_VALIDATION.shortSummary.maxLength}
+                      </p>
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Full Description *</Label>
+                      <Label htmlFor="description">
+                        Full Description *
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({OPPORTUNITY_VALIDATION.description.minLength}-{OPPORTUNITY_VALIDATION.description.maxLength} characters)
+                        </span>
+                      </Label>
                       <Textarea
                         id="description"
                         value={formData.description}
                         onChange={e => updateField('description', e.target.value)}
+                        onBlur={() => setTouchedFields(prev => new Set(prev).add('description'))}
                         placeholder="Describe the opportunity, what volunteers will do, and impact"
                         rows={6}
+                        className={getFieldClassName('description')}
                         required
                       />
+                      <FieldError field="description" />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.description.length}/{OPPORTUNITY_VALIDATION.description.maxLength}
+                      </p>
                     </div>
 
                     <div>
@@ -226,7 +390,7 @@ export default function CreateOpportunityForm() {
                   <FormNavigation
                     currentStep={1}
                     totalSteps={5}
-                    onNext={() => setStep(2)}
+                    onNext={() => handleNext(1)}
                     canGoNext={!!(formData.title && formData.shortSummary && formData.description)}
                   />
                 </div>
@@ -273,9 +437,12 @@ export default function CreateOpportunityForm() {
                     id="address"
                     value={formData.address || ''}
                     onChange={e => updateField('address', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('address'))}
                     placeholder="Street address"
+                    className={getFieldClassName('address')}
                     required
                   />
+                  <FieldError field="address" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -285,8 +452,11 @@ export default function CreateOpportunityForm() {
                       id="city"
                       value={formData.city || ''}
                       onChange={e => updateField('city', e.target.value)}
+                      onBlur={() => setTouchedFields(prev => new Set(prev).add('city'))}
+                      className={getFieldClassName('city')}
                       required
                     />
+                    <FieldError field="city" />
                   </div>
                   <div>
                     <Label htmlFor="state">State *</Label>
@@ -294,8 +464,11 @@ export default function CreateOpportunityForm() {
                       id="state"
                       value={formData.state || ''}
                       onChange={e => updateField('state', e.target.value)}
+                      onBlur={() => setTouchedFields(prev => new Set(prev).add('state'))}
+                      className={getFieldClassName('state')}
                       required
                     />
+                    <FieldError field="state" />
                   </div>
                 </div>
 
@@ -305,8 +478,11 @@ export default function CreateOpportunityForm() {
                     id="country"
                     value={formData.country || 'India'}
                     onChange={e => updateField('country', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('country'))}
+                    className={getFieldClassName('country')}
                     required
                   />
+                  <FieldError field="country" />
                 </div>
 
                 <div>
@@ -315,8 +491,11 @@ export default function CreateOpportunityForm() {
                     id="osrmLink"
                     value={formData.osrmLink || ''}
                     onChange={e => updateField('osrmLink', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('osrmLink'))}
                     placeholder="Google Maps or similar"
+                    className={getFieldClassName('osrmLink')}
                   />
+                  <FieldError field="osrmLink" />
                 </div>
               </>
             )}
@@ -326,7 +505,7 @@ export default function CreateOpportunityForm() {
               currentStep={2}
               totalSteps={5}
               onBack={() => setStep(1)}
-              onNext={() => setStep(3)}
+              onNext={() => handleNext(2)}
               canGoNext={
                 formData.mode === 'remote' ||
                 !!(formData.address && formData.city && formData.state && formData.country)
@@ -369,8 +548,11 @@ export default function CreateOpportunityForm() {
                     type="date"
                     value={formData.startDate || ''}
                     onChange={e => updateField('startDate', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('startDate'))}
+                    className={getFieldClassName('startDate')}
                     required
                   />
+                  <FieldError field="startDate" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -405,8 +587,11 @@ export default function CreateOpportunityForm() {
                       type="date"
                       value={formData.startDate || ''}
                       onChange={e => updateField('startDate', e.target.value)}
+                      onBlur={() => setTouchedFields(prev => new Set(prev).add('startDate'))}
+                      className={getFieldClassName('startDate')}
                       required
                     />
+                    <FieldError field="startDate" />
                   </div>
                   <div>
                     <Label htmlFor="endDate">End Date *</Label>
@@ -415,8 +600,11 @@ export default function CreateOpportunityForm() {
                       type="date"
                       value={formData.endDate || ''}
                       onChange={e => updateField('endDate', e.target.value)}
+                      onBlur={() => setTouchedFields(prev => new Set(prev).add('endDate'))}
+                      className={getFieldClassName('endDate')}
                       required
                     />
+                    <FieldError field="endDate" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -451,7 +639,10 @@ export default function CreateOpportunityForm() {
                     type="date"
                     value={formData.startDate || ''}
                     onChange={e => updateField('startDate', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('startDate'))}
+                    className={getFieldClassName('startDate')}
                   />
+                  <FieldError field="startDate" />
                   <p className="text-xs text-gray-500 mt-1">
                     Leave blank to start immediately, or set a future start date
                   </p>
@@ -463,7 +654,10 @@ export default function CreateOpportunityForm() {
                     type="date"
                     value={formData.endDate || ''}
                     onChange={e => updateField('endDate', e.target.value)}
+                    onBlur={() => setTouchedFields(prev => new Set(prev).add('endDate'))}
+                    className={getFieldClassName('endDate')}
                   />
+                  <FieldError field="endDate" />
                   <p className="text-xs text-gray-500 mt-1">
                     Optional end date for ongoing opportunities
                   </p>
@@ -476,7 +670,7 @@ export default function CreateOpportunityForm() {
               currentStep={3}
               totalSteps={5}
               onBack={() => setStep(2)}
-              onNext={() => setStep(4)}
+              onNext={() => handleNext(3)}
               canGoNext={
                 formData.dateType === 'ongoing' ||
                 (formData.dateType === 'single_day' && !!formData.startDate) ||
@@ -498,15 +692,24 @@ export default function CreateOpportunityForm() {
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="maxVolunteers">Maximum Volunteers *</Label>
+                <Label htmlFor="maxVolunteers">
+                  Maximum Volunteers *
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({OPPORTUNITY_VALIDATION.maxVolunteers.min}-{OPPORTUNITY_VALIDATION.maxVolunteers.max})
+                  </span>
+                </Label>
               <Input
                 id="maxVolunteers"
                 type="number"
-                min="1"
+                min={OPPORTUNITY_VALIDATION.maxVolunteers.min}
+                max={OPPORTUNITY_VALIDATION.maxVolunteers.max}
                 value={formData.maxVolunteers}
                 onChange={e => updateField('maxVolunteers', parseInt(e.target.value))}
+                onBlur={() => setTouchedFields(prev => new Set(prev).add('maxVolunteers'))}
+                className={getFieldClassName('maxVolunteers')}
                 required
               />
+              <FieldError field="maxVolunteers" />
             </div>
 
             <div>
@@ -584,13 +787,21 @@ export default function CreateOpportunityForm() {
             </div>
 
             <div>
-              <Label htmlFor="contactName">Contact Name *</Label>
+              <Label htmlFor="contactName">
+                Contact Name *
+                <span className="text-xs text-gray-500 ml-2">
+                  (min {OPPORTUNITY_VALIDATION.contactName.minLength} characters)
+                </span>
+              </Label>
               <Input
                 id="contactName"
                 value={formData.contactName || ''}
                 onChange={e => updateField('contactName', e.target.value)}
+                onBlur={() => setTouchedFields(prev => new Set(prev).add('contactName'))}
+                className={getFieldClassName('contactName')}
                 required
               />
+              <FieldError field="contactName" />
             </div>
 
             <div>
@@ -600,19 +811,30 @@ export default function CreateOpportunityForm() {
                 type="email"
                 value={formData.contactEmail || ''}
                 onChange={e => updateField('contactEmail', e.target.value)}
+                onBlur={() => setTouchedFields(prev => new Set(prev).add('contactEmail'))}
+                className={getFieldClassName('contactEmail')}
                 required
               />
+              <FieldError field="contactEmail" />
             </div>
 
             <div>
-              <Label htmlFor="contactPhone">Contact Phone *</Label>
+              <Label htmlFor="contactPhone">
+                Contact Phone *
+                <span className="text-xs text-gray-500 ml-2">
+                  (min {OPPORTUNITY_VALIDATION.contactPhone.minLength} digits)
+                </span>
+              </Label>
               <Input
                 id="contactPhone"
                 type="tel"
                 value={formData.contactPhone || ''}
                 onChange={e => updateField('contactPhone', e.target.value)}
+                onBlur={() => setTouchedFields(prev => new Set(prev).add('contactPhone'))}
+                className={getFieldClassName('contactPhone')}
                 required
               />
+              <FieldError field="contactPhone" />
             </div>
           </div>
 
@@ -620,7 +842,7 @@ export default function CreateOpportunityForm() {
               currentStep={4}
               totalSteps={5}
               onBack={() => setStep(3)}
-              onNext={() => setStep(5)}
+              onNext={() => handleNext(4)}
               canGoNext={
                 !!(formData.maxVolunteers &&
                 formData.contactName &&
