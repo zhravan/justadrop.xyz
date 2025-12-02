@@ -4,6 +4,7 @@
  */
 
 const AUTH_TOKEN_KEY = 'authToken'
+const REFRESH_TOKEN_KEY = 'refreshToken'
 const USER_TYPE_KEY = 'userType'
 const USER_KEY = 'user'
 
@@ -29,6 +30,24 @@ export function getAuthToken(): string | null {
   // If not in localStorage, check sessionStorage
   if (!token) {
     token = sessionStorage.getItem(AUTH_TOKEN_KEY)
+  }
+  
+  return token
+}
+
+/**
+ * Get refresh token from storage
+ * Checks localStorage first (remember me), then sessionStorage
+ */
+export function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null
+  
+  // Check localStorage first (remember me)
+  let token = localStorage.getItem(REFRESH_TOKEN_KEY)
+  
+  // If not in localStorage, check sessionStorage
+  if (!token) {
+    token = sessionStorage.getItem(REFRESH_TOKEN_KEY)
   }
   
   return token
@@ -70,16 +89,18 @@ export function getStoredUser(): StoredUser | null {
 
 /**
  * Store auth data
- * @param token - JWT token
+ * @param token - Access token
  * @param user - User data
  * @param userType - Type of user
  * @param remember - If true, uses localStorage (persists), else sessionStorage
+ * @param refreshToken - Refresh token (optional)
  */
 export function setAuthData(
   token: string,
   user: StoredUser,
   userType: UserType,
-  remember: boolean = false
+  remember: boolean = false,
+  refreshToken?: string
 ): void {
   if (typeof window === 'undefined') return
   
@@ -87,6 +108,27 @@ export function setAuthData(
   storage.setItem(AUTH_TOKEN_KEY, token)
   storage.setItem(USER_TYPE_KEY, userType)
   storage.setItem(USER_KEY, JSON.stringify(user))
+  if (refreshToken) {
+    storage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  }
+}
+
+/**
+ * Update access token only (keeps refresh token)
+ */
+export function updateAccessToken(token: string): void {
+  if (typeof window === 'undefined') return
+  
+  // Update in the same storage where refresh token exists
+  const refreshToken = getRefreshToken()
+  if (refreshToken) {
+    // Check which storage has the refresh token
+    if (localStorage.getItem(REFRESH_TOKEN_KEY)) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token)
+    } else if (sessionStorage.getItem(REFRESH_TOKEN_KEY)) {
+      sessionStorage.setItem(AUTH_TOKEN_KEY, token)
+    }
+  }
 }
 
 /**
@@ -97,9 +139,11 @@ export function clearAuthData(): void {
   
   // Clear from both storages to ensure clean logout
   localStorage.removeItem(AUTH_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
   localStorage.removeItem(USER_TYPE_KEY)
   localStorage.removeItem(USER_KEY)
   sessionStorage.removeItem(AUTH_TOKEN_KEY)
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY)
   sessionStorage.removeItem(USER_TYPE_KEY)
   sessionStorage.removeItem(USER_KEY)
 }

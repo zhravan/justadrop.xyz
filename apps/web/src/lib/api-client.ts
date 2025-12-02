@@ -6,7 +6,7 @@ import type {
   Participation,
   ParticipationWithDetails,
 } from '@justadrop/types';
-import { getAuthToken, setAuthData, clearAuthData, setRegistrationEmail, type UserType, type StoredUser } from './auth-storage';
+import { getAuthToken, getRefreshToken, setAuthData, updateAccessToken, clearAuthData, setRegistrationEmail, type UserType, type StoredUser } from './auth-storage';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -22,10 +22,62 @@ export class ApiError extends Error {
   }
 }
 
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+
+// Helper to refresh access token
+async function refreshAccessToken(): Promise<string> {
+  // If already refreshing, wait for that promise
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      const data = await response.json().catch(() => ({ message: 'Refresh failed' }));
+
+      if (!response.ok) {
+        // Refresh token is invalid, clear auth data
+        clearAuthData();
+        throw new ApiError(
+          data.message || 'Refresh token expired',
+          response.status,
+          data
+        );
+      }
+
+      const { accessToken } = data;
+      updateAccessToken(accessToken);
+      return accessToken;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 // Helper to handle API requests
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retryOn401: boolean = true
 ): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
@@ -43,6 +95,39 @@ async function apiRequest<T>(
   });
 
   const data = await response.json().catch(() => ({ message: 'Request failed' }));
+
+  // If 401 and we have a refresh token, try to refresh
+  if (response.status === 401 && retryOn401 && getRefreshToken() && endpoint !== '/auth/refresh') {
+    try {
+      const newToken = await refreshAccessToken();
+      // Retry the request with new token
+      headers['Authorization'] = `Bearer ${newToken}`;
+      const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      const retryData = await retryResponse.json().catch(() => ({ message: 'Request failed' }));
+
+      if (!retryResponse.ok) {
+        throw new ApiError(
+          retryData.message || `Request failed with status ${retryResponse.status}`,
+          retryResponse.status,
+          retryData
+        );
+      }
+
+      return retryData;
+    } catch (refreshError) {
+      // Refresh failed, clear auth and throw original error
+      clearAuthData();
+      throw new ApiError(
+        data.message || `Request failed with status ${response.status}`,
+        response.status,
+        data
+      );
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(
@@ -77,7 +162,8 @@ function buildQueryParams(filters?: Record<string, any>): string {
 // ============ Auth API ============
 
 interface LoginResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: StoredUser;
 }
 
@@ -99,10 +185,10 @@ export const authApi = {
     const response = await apiRequest<LoginResponse>(`/auth/${userType}/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    });
+    }, false); // Don't retry on 401 for login
 
-    // Store auth data
-    setAuthData(response.token, response.user, userType, remember);
+    // Store auth data with refresh token
+    setAuthData(response.accessToken, response.user, userType, remember, response.refreshToken);
 
     return response;
   },
@@ -215,9 +301,18 @@ export const authApi = {
   },
 
   /**
-   * Logout - clears auth data
+   * Logout - clears auth data (stateless, no server-side revocation)
    */
-  logout: (): void => {
+  logout: async (): Promise<void> => {
+    try {
+      // Optional: notify server (though it's stateless, this can be used for analytics)
+      await apiRequest('/auth/logout', {
+        method: 'POST',
+      }, false); // Don't retry on 401 for logout
+    } catch (error) {
+      // Even if logout request fails, clear local auth data
+      console.error('Logout request failed:', error);
+    }
     clearAuthData();
   },
 };

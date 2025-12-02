@@ -11,7 +11,13 @@ export interface AuthUser {
 export const jwtConfig = jwt({
   name: 'jwt',
   secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  exp: '7d',
+  exp: '15m', // Access tokens expire in 15 minutes
+});
+
+export const refreshJwtConfig = jwt({
+  name: 'refreshJwt',
+  secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+  exp: '30d', // Refresh tokens expire in 30 days
 });
 
 /**

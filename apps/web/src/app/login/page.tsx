@@ -36,7 +36,7 @@ export default function LoginPage() {
       const response = await authApi.login(userType, email, password, rememberMe)
       
       // Update auth context
-      login(response.token, response.user, userType, rememberMe)
+      login(response.accessToken, response.refreshToken, response.user, userType, rememberMe)
 
       toast.success(`Welcome back, ${response.user.name}!`)
       router.push('/')
