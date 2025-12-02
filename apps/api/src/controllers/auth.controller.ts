@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { AuthService } from '../services/auth.service';
 import { log } from '../utils/logger';
+import { AuthError, AuthErrors } from '../utils/auth-errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -25,17 +26,27 @@ export class AuthController {
   /**
    * Login volunteer
    */
-  async loginVolunteer(body: { email: string; password: string }, jwt: any) {
+  async loginVolunteer(body: { email: string; password: string }, jwt: any, refreshJwt: any) {
     try {
       const user = await this.authService.loginVolunteer(body.email, body.password);
       
-      const token = await jwt.sign({
+      // Generate access token (short-lived)
+      const accessToken = await jwt.sign({
         id: user.id,
+        email: user.email,
+        type: 'volunteer',
+      });
+
+      // Generate refresh token (long-lived) - stateless JWT
+      const refreshToken = await refreshJwt.sign({
+        id: user.id,
+        email: user.email,
         type: 'volunteer',
       });
 
       return {
-        token,
+        accessToken,
+        refreshToken,
         user: { ...user, password_hash: undefined },
       };
     } catch (error) {
@@ -60,17 +71,27 @@ export class AuthController {
   /**
    * Login organization
    */
-  async loginOrganization(body: { email: string; password: string }, jwt: any) {
+  async loginOrganization(body: { email: string; password: string }, jwt: any, refreshJwt: any) {
     try {
       const user = await this.authService.loginOrganization(body.email, body.password);
       
-      const token = await jwt.sign({
+      // Generate access token (short-lived)
+      const accessToken = await jwt.sign({
         id: user.id,
+        email: user.email,
+        type: 'organization',
+      });
+
+      // Generate refresh token (long-lived) - stateless JWT
+      const refreshToken = await refreshJwt.sign({
+        id: user.id,
+        email: user.email,
         type: 'organization',
       });
 
       return {
-        token,
+        accessToken,
+        refreshToken,
         user: { ...user, password_hash: undefined },
         approval_status: user.approval_status,
       };
@@ -83,23 +104,75 @@ export class AuthController {
   /**
    * Login admin
    */
-  async loginAdmin(body: { email: string; password: string }, jwt: any) {
+  async loginAdmin(body: { email: string; password: string }, jwt: any, refreshJwt: any) {
     try {
       const user = await this.authService.loginAdmin(body.email, body.password);
       
-      const token = await jwt.sign({
+      // Generate access token (short-lived)
+      const accessToken = await jwt.sign({
         id: user.id,
+        email: user.email,
+        type: 'admin',
+      });
+
+      // Generate refresh token (long-lived) - stateless JWT
+      const refreshToken = await refreshJwt.sign({
+        id: user.id,
+        email: user.email,
         type: 'admin',
       });
 
       return {
-        token,
+        accessToken,
+        refreshToken,
         user: { ...user, password_hash: undefined },
       };
     } catch (error) {
       log.error('Admin login failed', error);
       throw error;
     }
+  }
+
+  /**
+   * Refresh access token using refresh token (stateless)
+   */
+  async refreshToken(body: { refreshToken: string }, jwt: any, refreshJwt: any) {
+    try {
+      // Verify refresh token JWT (stateless - no DB lookup)
+      const refreshPayload = await refreshJwt.verify(body.refreshToken);
+      if (!refreshPayload || !refreshPayload.id || !refreshPayload.type) {
+        throw AuthErrors.INVALID_REFRESH_TOKEN;
+      }
+
+      // Generate new access token
+      const accessToken = await jwt.sign({
+        id: refreshPayload.id,
+        email: refreshPayload.email,
+        type: refreshPayload.type,
+      });
+
+      return {
+        accessToken,
+      };
+    } catch (error) {
+      log.error('Token refresh failed', error);
+      // If it's already an AuthError, re-throw it
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      // Otherwise, it's likely a JWT verification error (expired/invalid)
+      throw AuthErrors.INVALID_REFRESH_TOKEN;
+    }
+  }
+
+  /**
+   * Logout - stateless (just returns success, frontend clears tokens)
+   */
+  async logout() {
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
   }
 
   /**

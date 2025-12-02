@@ -4,6 +4,7 @@ import { OrganizationRepository, CreateOrganizationData } from '../repositories/
 import { AdminRepository } from '../repositories/admin.repository';
 import { VerificationTokenRepository } from '../repositories/verification-token.repository';
 import { sendEmailVerification } from '../utils/email';
+import { AuthErrors } from '../utils/auth-errors';
 
 export class AuthService {
   private volunteerRepo: VolunteerRepository;
@@ -27,7 +28,7 @@ export class AuthService {
     // Check if email already exists
     const existing = await this.volunteerRepo.findByEmail(data.email);
     if (existing) {
-      throw new Error('Email already registered');
+      throw AuthErrors.EMAIL_ALREADY_REGISTERED;
     }
 
     // Hash password
@@ -75,18 +76,18 @@ export class AuthService {
 
     const volunteer = await this.volunteerRepo.findByEmail(email);
     if (!volunteer) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Verify password
     const isValid = await Bun.password.verify(password, volunteer.password_hash);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Check if email is verified
     if (!volunteer.email_verified) {
-      throw new Error('Please verify your email before logging in');
+      throw AuthErrors.EMAIL_NOT_VERIFIED;
     }
 
     // Return user data (without password)
@@ -103,7 +104,7 @@ export class AuthService {
     // Check if email already exists
     const existing = await this.organizationRepo.findByEmail(data.email);
     if (existing) {
-      throw new Error('Email already registered');
+      throw AuthErrors.EMAIL_ALREADY_REGISTERED;
     }
 
     // Hash password
@@ -156,23 +157,23 @@ export class AuthService {
 
     const organization = await this.organizationRepo.findByEmail(email);
     if (!organization) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Verify password
     const isValid = await Bun.password.verify(password, organization.password_hash);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Check if email is verified
     if (!organization.email_verified) {
-      throw new Error('Please verify your email before logging in');
+      throw AuthErrors.EMAIL_NOT_VERIFIED;
     }
 
     // Check if blacklisted
     if (organization.approval_status === 'blacklisted') {
-      throw new Error('Account has been suspended');
+      throw AuthErrors.ACCOUNT_SUSPENDED;
     }
 
     // Return user data (without password)
@@ -191,13 +192,13 @@ export class AuthService {
 
     const admin = await this.adminRepo.findByEmail(email);
     if (!admin) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Verify password
     const isValid = await Bun.password.verify(password, admin.password_hash);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw AuthErrors.INVALID_CREDENTIALS;
     }
 
     // Return user data (without password)
@@ -214,17 +215,17 @@ export class AuthService {
     // Find verification token
     const tokenRecord = await this.tokenRepo.findByToken(token);
     if (!tokenRecord) {
-      throw new Error('This verification link is invalid or has already been used. If you already verified your email, please try logging in.');
+      throw AuthErrors.INVALID_VERIFICATION_TOKEN;
     }
 
     // Check if token is expired
     if (new Date() > tokenRecord.expiresAt) {
-      throw new Error('Verification token has expired. Please request a new verification email.');
+      throw AuthErrors.EXPIRED_VERIFICATION_TOKEN;
     }
 
     // Check if it's an email verification token
     if (tokenRecord.type !== 'email_verification') {
-      throw new Error('Invalid token type');
+      throw AuthErrors.INVALID_VERIFICATION_TOKEN;
     }
 
     // Check for volunteer
@@ -267,7 +268,7 @@ export class AuthService {
       };
     }
 
-    throw new Error('User not found');
+    throw AuthErrors.USER_NOT_FOUND;
   }
 
   /**
@@ -280,7 +281,7 @@ export class AuthService {
     const volunteer = await this.volunteerRepo.findByEmail(email);
     if (volunteer) {
       if (volunteer.email_verified) {
-        throw new Error('Email is already verified');
+        throw AuthErrors.EMAIL_ALREADY_VERIFIED;
       }
 
       // Delete existing tokens
@@ -310,7 +311,7 @@ export class AuthService {
     const organization = await this.organizationRepo.findByEmail(email);
     if (organization) {
       if (organization.email_verified) {
-        throw new Error('Email is already verified');
+        throw AuthErrors.EMAIL_ALREADY_VERIFIED;
       }
 
       // Delete existing tokens
@@ -336,7 +337,7 @@ export class AuthService {
       };
     }
 
-    throw new Error('Email not found');
+    throw AuthErrors.EMAIL_NOT_FOUND;
   }
 }
 

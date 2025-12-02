@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import jwt from '@elysiajs/jwt';
 import { log } from '../utils/logger';
+import { AuthError } from '../utils/auth-errors';
 
 export interface AuthUser {
   id: string;
@@ -11,7 +12,13 @@ export interface AuthUser {
 export const jwtConfig = jwt({
   name: 'jwt',
   secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  exp: '7d',
+  exp: '15m', // Access tokens expire in 15 minutes
+});
+
+export const refreshJwtConfig = jwt({
+  name: 'refreshJwt',
+  secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+  exp: '30d', // Refresh tokens expire in 30 days
 });
 
 /**
@@ -74,8 +81,7 @@ export const requireAuth = new Elysia()
   .onBeforeHandle(({ user, set }: any) => {
     if (!user) {
       log.warn('Unauthenticated request attempt');
-      set.status = 401;
-      throw new Error('Authentication required');
+      throw new AuthError('Authentication required. Please log in to access this resource.', 401, 'AUTHENTICATION_REQUIRED');
     }
   });
 
@@ -88,13 +94,11 @@ export const requireAdmin = new Elysia()
   .onBeforeHandle(({ user, set }: any) => {
     if (!user) {
       log.warn('Unauthenticated request attempt');
-      set.status = 401;
-      throw new Error('Authentication required');
+      throw new AuthError('Authentication required. Please log in to access this resource.', 401, 'AUTHENTICATION_REQUIRED');
     }
     if (user.type !== 'admin') {
       log.warn('Non-admin access attempt', { userId: user.id, userType: user.type });
-      set.status = 403;
-      throw new Error('Admin access required');
+      throw new AuthError('Admin access required. You do not have permission to access this resource.', 403, 'ADMIN_ACCESS_REQUIRED');
     }
   });
 
@@ -108,8 +112,7 @@ export const requireUserType = (allowedTypes: ('admin' | 'volunteer' | 'organiza
     .onBeforeHandle(({ user, set }: any) => {
       if (!user) {
         log.warn('Unauthenticated request attempt');
-        set.status = 401;
-        throw new Error('Authentication required');
+        throw new AuthError('Authentication required. Please log in to access this resource.', 401, 'AUTHENTICATION_REQUIRED');
       }
       if (!allowedTypes.includes(user.type)) {
         log.warn('Unauthorized user type access attempt', { 
@@ -117,8 +120,12 @@ export const requireUserType = (allowedTypes: ('admin' | 'volunteer' | 'organiza
           userType: user.type,
           allowedTypes 
         });
-        set.status = 403;
-        throw new Error(`Access restricted to: ${allowedTypes.join(', ')}`);
+        const typeLabels = allowedTypes.map(t => {
+          if (t === 'volunteer') return 'volunteers';
+          if (t === 'organization') return 'organizations';
+          return 'admins';
+        }).join(', ');
+        throw new AuthError(`Access restricted to ${typeLabels} only. Your account type (${user.type}) does not have permission.`, 403, 'INSUFFICIENT_PERMISSIONS');
       }
     });
 };

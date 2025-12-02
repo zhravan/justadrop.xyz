@@ -17,7 +17,7 @@ interface AuthContextType {
   userType: UserType | null
   token: string | null
   isLoading: boolean
-  login: (token: string, user: StoredUser, userType: UserType, remember?: boolean) => void
+  login: (accessToken: string, refreshToken: string, user: StoredUser, userType: UserType, remember?: boolean) => void
   logout: () => void
 }
 
@@ -54,18 +54,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = (
-    newToken: string,
+    accessToken: string,
+    refreshToken: string,
     newUser: StoredUser,
     newUserType: UserType,
     remember: boolean = false
   ) => {
     // Update state
-    setToken(newToken)
+    setToken(accessToken)
     setUser(newUser)
     setUserType(newUserType)
 
     // Persist to storage
-    setAuthData(newToken, newUser, newUserType, remember)
+    setAuthData(accessToken, newUser, newUserType, remember, refreshToken)
   }
 
   const logout = () => {

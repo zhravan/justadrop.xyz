@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia';
 import { log } from '../utils/logger';
+import { AuthError } from '../utils/auth-errors';
 
 /**
  * Global error handler middleware
@@ -9,6 +10,16 @@ export const errorHandler = new Elysia()
   .onError(({ error, code, set }) => {
     // Log the error
     log.error('Request error', error, { code });
+
+    // Handle AuthError with specific status codes
+    if (error instanceof AuthError) {
+      set.status = error.statusCode;
+      return {
+        success: false,
+        message: error.message,
+        code: error.code,
+      };
+    }
 
     // Set appropriate status code
     if (code === 'VALIDATION') {

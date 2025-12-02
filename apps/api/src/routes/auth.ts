@@ -4,6 +4,7 @@ import { AuthController } from '../controllers/auth.controller';
 import { log } from '../utils/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
 
 const authController = new AuthController();
 
@@ -11,7 +12,8 @@ const authController = new AuthController();
  * Auth routes - Public endpoints (no authentication required)
  */
 export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
-  .use(jwt({ name: 'jwt', secret: JWT_SECRET }))
+  .use(jwt({ name: 'jwt', secret: JWT_SECRET, exp: '15m' }))
+  .use(jwt({ name: 'refreshJwt', secret: JWT_REFRESH_SECRET, exp: '30d' }))
 
   // Volunteer Registration (Public)
   .post(
@@ -45,8 +47,8 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   // Volunteer Login (Public)
   .post(
     '/volunteer/login',
-    async ({ body, jwt }) => {
-      return await authController.loginVolunteer(body, jwt);
+    async ({ body, jwt, refreshJwt }) => {
+      return await authController.loginVolunteer(body, jwt, refreshJwt);
     },
     {
       body: t.Object({
@@ -129,8 +131,8 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   // Organization Login (Public)
   .post(
     '/organization/login',
-    async ({ body, jwt }) => {
-      return await authController.loginOrganization(body, jwt);
+    async ({ body, jwt, refreshJwt }) => {
+      return await authController.loginOrganization(body, jwt, refreshJwt);
     },
     {
       body: t.Object({
@@ -147,8 +149,8 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   // Admin Login (Public)
   .post(
     '/admin/login',
-    async ({ body, jwt }) => {
-      return await authController.loginAdmin(body, jwt);
+    async ({ body, jwt, refreshJwt }) => {
+      return await authController.loginAdmin(body, jwt, refreshJwt);
     },
     {
       body: t.Object({
@@ -192,6 +194,37 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
       detail: {
         summary: 'Resend verification email',
         description: 'Resend email verification link to volunteer or organization',
+      },
+    }
+  )
+
+  // Refresh Token (Public)
+  .post(
+    '/refresh',
+    async ({ body, jwt, refreshJwt }) => {
+      return await authController.refreshToken(body, jwt, refreshJwt);
+    },
+    {
+      body: t.Object({
+        refreshToken: t.String(),
+      }),
+      detail: {
+        summary: 'Refresh access token',
+        description: 'Get a new access token using a valid refresh token',
+      },
+    }
+  )
+
+  // Logout (Public)
+  .post(
+    '/logout',
+    async () => {
+      return await authController.logout();
+    },
+    {
+      detail: {
+        summary: 'Logout',
+        description: 'Logout user (stateless - frontend clears tokens)',
       },
     }
   );
