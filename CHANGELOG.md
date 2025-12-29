@@ -1,3 +1,14 @@
+# [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.5...v1.0.0) (2025-12-29)
+
+
+### Features
+
+* authentication error handling ([4a6f87b](https://github.com/zhravan/justadrop.xyz/commit/4a6f87b43fd6110ab6bec321f758c23e075f802a))
+* refresh token flow ([1ea6891](https://github.com/zhravan/justadrop.xyz/commit/1ea68911144d8e13a7afe974ceda93d122bc265b))
+* trigger build ([8b70584](https://github.com/zhravan/justadrop.xyz/commit/8b70584e45f74d937cb04ddc68ff091e4d9dbda7))
+
+
+
 # [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.4...v1.0.0) (2025-12-02)
 
 
