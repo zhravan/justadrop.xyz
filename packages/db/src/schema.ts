@@ -218,3 +218,33 @@ export const opportunityApplications = pgTable('opportunity_applications', {
   statusIdx: index('applications_status_idx').on(table.status),
   approvedByIdx: index('applications_approved_by_idx').on(table.approvedBy),
 }));
+
+export const volunteersFeedback = pgTable('volunteers_feedback', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  opportunityId: text('opportunity_id').notNull().references(() => opportunities.id, { onDelete: 'cascade' }),
+  volunteerId: text('volunteer_id').references(() => users.id, { onDelete: 'cascade' }),
+  rating: integer('rating').notNull(), // 1 to 5
+  testimonial: text('testimonial'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  opportunityIdIdx: index('volunteers_feedback_opp_id_idx').on(table.opportunityId),
+  userIdIdx: index('volunteers_feedback_user_id_idx').on(table.userId),
+  volunteerIdIdx: index('volunteers_feedback_volunteer_id_idx').on(table.volunteerId),
+  ratingIdx: index('volunteers_feedback_rating_idx').on(table.rating),
+}));
+
+export const opportunitiesFeedback = pgTable('opportunities_feedback', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  opportunityId: text('opportunity_id').references(() => opportunities.id, { onDelete: 'cascade' }),
+  rating: integer('rating').notNull(), // 1 to 5
+  images: text('images').array().default([]),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('opportunities_feedback_user_id_idx').on(table.userId),
+  opportunityIdIdx: index('opportunities_feedback_opp_id_idx').on(table.opportunityId),
+  ratingIdx: index('opportunities_feedback_rating_idx').on(table.rating),
+}));

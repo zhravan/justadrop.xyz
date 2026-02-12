@@ -50,6 +50,13 @@
       "when": 1770934308224,
       "tag": "0006_flowery_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770934551471,
+      "tag": "0007_confused_doctor_strange",
+      "breakpoints": true
     }
   ]
 }
