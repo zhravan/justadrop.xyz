@@ -26,8 +26,7 @@ Thumbs.db
 *.log
 **/*.log
 
-# Drizzle
-drizzle/
+
 
 # Database backups
 backup_*.sql
