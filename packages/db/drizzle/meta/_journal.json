@@ -15,6 +15,20 @@
       "when": 1770933541481,
       "tag": "0001_curly_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770933859415,
+      "tag": "0002_nostalgic_venus",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770933928775,
+      "tag": "0003_chief_marrow",
+      "breakpoints": true
     }
   ]
 }

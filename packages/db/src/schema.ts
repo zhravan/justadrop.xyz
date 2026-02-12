@@ -53,28 +53,57 @@ export const sessions = pgTable('sessions', {
   expiresAtIdx: index('sessions_expires_at_idx').on(table.expiresAt),
 }));
 
-export const organizationStatusEnum = pgEnum('organization_status', ['pending', 'approved', 'rejected', 'suspended']);
+export const organizationStatusEnum = pgEnum('organization_status', ['pending', 'verified', 'rejected', 'suspended']);
+
+export const causeEnum = pgEnum('cause', [
+  'animal_welfare',
+  'environmental',
+  'humanitarian',
+  'education',
+  'healthcare',
+  'poverty_alleviation',
+  'women_empowerment',
+  'child_welfare',
+  'elderly_care',
+  'disability_support',
+  'rural_development',
+  'urban_development',
+  'arts_culture',
+  'sports',
+  'technology',
+  'other'
+]);
 
 export const organizations = pgTable('organizations', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull(),
-  email: text('email').notNull(),
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orgName: text('org_name').notNull(),
   description: text('description'),
+  causes: text('causes').array().notNull().default([]),
   website: text('website'),
-  phone: text('phone'),
+  registrationNumber: text('registration_number'),
+  contactPersonName: text('contact_person_name').notNull(),
+  contactPersonEmail: text('contact_person_email').notNull(),
+  contactPersonNumber: text('contact_person_number'),
+  verificationStatus: organizationStatusEnum('verification_status').notNull().default('pending'),
   address: text('address'),
   city: text('city'),
   state: text('state'),
   country: text('country').default('India'),
-  registrationNumber: text('registration_number'),
-  status: organizationStatusEnum('status').notNull().default('pending'),
-  isVerified: boolean('is_verified').notNull().default(false),
+  verifiedAt: timestamp('verified_at'),
+  logo: text('logo'), // Can be URL string or asset key (e.g., S3 key, CDN path)
+  yearEstablished: text('year_established'),
+  socialLinks: text('social_links').array().default([]),
+  images: text('images').array().default([]),
+  isCsrEligible: boolean('is_csr_eligible').notNull().default(false),
+  isFcraRegistered: boolean('is_fcra_registered').notNull().default(false),
   deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
-  emailIdx: index('organizations_email_idx').on(table.email),
-  statusIdx: index('organizations_status_idx').on(table.status),
+  createdByIdx: index('organizations_created_by_idx').on(table.createdBy),
+  verificationStatusIdx: index('organizations_verification_status_idx').on(table.verificationStatus),
+  contactPersonEmailIdx: index('organizations_contact_email_idx').on(table.contactPersonEmail),
   deletedAtIdx: index('organizations_deleted_at_idx').on(table.deletedAt),
 }));
 
