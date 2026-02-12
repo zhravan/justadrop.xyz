@@ -43,6 +43,13 @@
       "when": 1770934189309,
       "tag": "0005_marvelous_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770934308224,
+      "tag": "0006_flowery_bishop",
+      "breakpoints": true
     }
   ]
 }

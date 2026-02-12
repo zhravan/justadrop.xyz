@@ -198,19 +198,23 @@ export const opportunities = pgTable('opportunities', {
   requiredSkillsIdx: index('opportunities_required_skills_idx').on(table.requiredSkills),
 }));
 
-export const applicationStatusEnum = pgEnum('application_status', ['pending', 'accepted', 'rejected', 'withdrawn']);
+export const applicationStatusEnum = pgEnum('application_status', ['pending', 'approved', 'rejected']);
 
 export const opportunityApplications = pgTable('opportunity_applications', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  opportunityId: text('opportunity_id').notNull().references(() => opportunities.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  opportunityId: text('opportunity_id').notNull().references(() => opportunities.id, { onDelete: 'cascade' }),
+  motivationDescription: text('motivation_description'),
   status: applicationStatusEnum('status').notNull().default('pending'),
-  message: text('message'), // Optional message from volunteer
-  appliedAt: timestamp('applied_at').notNull().defaultNow(),
+  hasAttended: boolean('has_attended').notNull().default(false),
+  approvedAt: timestamp('approved_at'),
+  approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
   opportunityUserIdx: index('applications_opp_user_idx').on(table.opportunityId, table.userId),
   opportunityIdIdx: index('applications_opp_id_idx').on(table.opportunityId),
   userIdIdx: index('applications_user_id_idx').on(table.userId),
   statusIdx: index('applications_status_idx').on(table.status),
+  approvedByIdx: index('applications_approved_by_idx').on(table.approvedBy),
 }));
