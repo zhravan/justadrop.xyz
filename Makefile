@@ -1,5 +1,5 @@
-.PHONY: install dev build clean db-setup db-generate db-migrate db-studio db-seed-admin \
-        prod-deploy prod-redeploy prod-stop prod-restart prod-logs prod-status prod-backup prod-seed-admin
+.PHONY: install dev build clean db-setup db-generate db-migrate db-studio \
+        prod-deploy prod-redeploy prod-stop prod-restart prod-logs prod-status prod-backup
 
 # Development Commands
 install:
@@ -29,9 +29,6 @@ db-migrate:
 db-studio:
 	bun run db:studio
 
-db-seed-admin:
-	cd packages/db && bun run seed:admin
-
 db-stop:
 	docker stop justadrop-db
 
@@ -60,5 +57,3 @@ prod-status:
 prod-backup:
 	./deploy.sh backup
 
-prod-seed-admin:
-	./deploy.sh seed-admin

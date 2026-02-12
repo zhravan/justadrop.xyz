@@ -141,12 +141,6 @@ restore() {
     print_success "Database restored successfully"
 }
 
-# Seed admin user
-seed_admin() {
-    print_info "Creating admin user..."
-    docker compose --env-file .env.production exec api bun run --cwd /app/packages/db seed:admin
-    print_success "Admin user created"
-}
 
 # Show help
 show_help() {
@@ -163,7 +157,6 @@ show_help() {
     echo "  status      - Show service status"
     echo "  backup      - Create database backup"
     echo "  restore     - Restore database from backup"
-    echo "  seed-admin  - Create initial admin user"
     echo "  help        - Show this help message"
     echo ""
     echo "Examples:"
@@ -198,9 +191,6 @@ case "$1" in
         ;;
     restore)
         restore "$2"
-        ;;
-    seed-admin)
-        seed_admin
         ;;
     help|--help|-h)
         show_help

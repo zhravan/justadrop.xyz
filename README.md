@@ -97,19 +97,6 @@ The platform has three user types:
 - Organizations: Require admin approval before posting opportunities
 - Admins: Can approve/reject/blacklist organizations
 
-Create the first admin user:
-
-```bash
-make db-seed-admin
-# Default: admin@justadrop.xyz / admin123456
-```
-
-Override default admin credentials:
-
-```bash
-ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=yourpassword ADMIN_NAME="Your Name" make db-seed-admin
-```
-
 OpenAPI docs available at <http://localhost:3001/swagger>
 
 ## Email Notifications
@@ -190,7 +177,6 @@ make prod-restart     # Restart services
 make prod-logs        # View logs
 make prod-status      # Check service status
 make prod-backup      # Backup database
-make prod-seed-admin  # Create admin user
 ```
 
 ### Services (Production Deployment Work In Progress)
