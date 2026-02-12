@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
-import { healthRouter } from './routes';
+import { healthRouter, authRouter } from './routes';
 import { errorHandler, responseEnvelope } from './middleware';
 import { runMigrations } from '@justadrop/db';
 import { logger } from './utils/logger';
@@ -100,6 +100,7 @@ async function startServer() {
           },
           tags: [
             { name: 'health', description: 'Health check endpoints' },
+            { name: 'auth', description: 'Authentication endpoints' },
           ],
         },
       })
@@ -108,6 +109,7 @@ async function startServer() {
 
   app.get('/', () => ({ message: 'Just a Drop API' }))
     .use(healthRouter)
+    .use(authRouter)
     .listen(3001);
 
   server = app;
