@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { useClickOutside } from '@/hooks';
 import { useAuth } from '@/lib/auth/use-auth';
+import { cn } from '@/lib/common';
 
 const navLinks = [
   { href: '/opportunities', label: 'Opportunities' },
@@ -23,6 +25,7 @@ export function ViewHeader() {
   useClickOutside(menuRef, mobileMenuOpen, closeMenu);
   useClickOutside(userMenuRef, userMenuOpen, closeUserMenu);
   const { user, isAuthenticated, logout } = useAuth();
+  const pathname = usePathname();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-foreground/5 bg-white/80 backdrop-blur-xl">
@@ -38,19 +41,32 @@ export function ViewHeader() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex md:items-center md:gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-jad-mint/60 hover:text-jad-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-jad-mint/60 hover:text-jad-foreground',
+                  isActive
+                    ? 'bg-jad-mint/60 text-jad-foreground font-semibold'
+                    : 'text-foreground/80'
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           {isAuthenticated && user && (
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 rounded-full bg-jad-primary/10 px-4 py-2.5 text-sm font-semibold text-jad-primary transition-all duration-200 hover:bg-jad-primary/20 hover:text-jad-dark"
+              className={cn(
+                'flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200',
+                pathname.startsWith('/dashboard')
+                  ? 'bg-jad-primary/20 text-jad-dark'
+                  : 'bg-jad-primary/10 text-jad-primary hover:bg-jad-primary/20 hover:text-jad-dark'
+              )}
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
@@ -112,22 +128,33 @@ export function ViewHeader() {
               className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-foreground/10 bg-white py-2 shadow-xl"
               role="menu"
             >
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className="block px-5 py-3 text-sm font-medium text-foreground/80 transition-colors hover:bg-jad-mint/60 hover:text-jad-foreground"
-                  role="menuitem"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className={cn(
+                      'block px-5 py-3 text-sm font-medium transition-colors hover:bg-jad-mint/60 hover:text-jad-foreground',
+                      isActive && 'bg-jad-mint/60 text-jad-foreground font-semibold'
+                    )}
+                    role="menuitem"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
               {isAuthenticated && user && (
                 <Link
                   href="/dashboard"
                   onClick={closeMenu}
-                  className="flex items-center gap-2 px-5 py-3 text-sm font-semibold text-jad-primary hover:bg-jad-mint/60"
+                  className={cn(
+                    'flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-colors hover:bg-jad-mint/60',
+                    pathname.startsWith('/dashboard')
+                      ? 'bg-jad-mint/60 text-jad-foreground'
+                      : 'text-jad-primary'
+                  )}
                   role="menuitem"
                 >
                   <LayoutDashboard className="h-4 w-4" />
