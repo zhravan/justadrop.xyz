@@ -1,3 +1,12 @@
+# [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.13...v1.0.0) (2026-02-13)
+
+
+### Features
+
+* set node version for the project ([8fe6861](https://github.com/zhravan/justadrop.xyz/commit/8fe68613b1769329d4b7b32a5715e394ae53885b))
+
+
+
 # [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.12...v1.0.0) (2026-02-13)
 
 
