@@ -1,3 +1,12 @@
+# [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.9...v1.0.0) (2026-02-12)
+
+
+### Features
+
+* base mono repo setup ([2aba8a1](https://github.com/zhravan/justadrop.xyz/commit/2aba8a1b11d320c0e6ab31393219190b77d5faed))
+
+
+
 # [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.8...v1.0.0) (2026-02-12)
 
 
