@@ -10,3 +10,5 @@ export {
   type HowItWorksStep,
   type HowItWorksFlowType,
 } from './how-it-works';
+
+export { TEAM_MEMBERS, type TeamMember } from './team';
