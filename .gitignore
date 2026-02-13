@@ -43,8 +43,11 @@ caddy_config/
 # IDE
 .idea/
 **/.idea/
-.vscode/
-**/.vscode/
+# VS Code - allow workspace settings but ignore user-specific files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
 *.swp
 *.swo
 **/*.swp

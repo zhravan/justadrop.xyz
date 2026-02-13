@@ -27,10 +27,24 @@ packages/
 
 ## Prerequisites
 
-- Bun >= 1.0 ([install](https://bun.sh))
-- Docker (for PostgreSQL)
+- **Node.js**: v24.7.0 (use `nvm use` if you have nvm installed)
+- **Bun**: >= 1.0 ([install](https://bun.sh))
+- **Docker**: For PostgreSQL database
 
-## Setup
+## Quick Start
+
+```bash
+# 1. Install dependencies
+bun install
+
+# 2. Run setup script (creates .env, starts DB, runs migrations)
+bun run setup
+
+# 3. Start development servers
+bun run dev
+```
+
+## Manual Setup
 
 ```bash
 # Install dependencies
@@ -38,15 +52,16 @@ bun install
 
 # Copy environment file
 cp .env.example .env
+# Edit .env with your configuration
 
-# Setup PostgreSQL (Docker)
-# Note: Add your database setup command here
+# Start PostgreSQL database
+docker-compose -f docker-compose.dev.yml up -d
 
-# Generate and run migrations (after defining schema)
+# Generate and run migrations
 bun run db:generate
 bun run db:migrate
 
-# Build packages
+# Build packages (runs automatically after install)
 bun run build:packages
 ```
 

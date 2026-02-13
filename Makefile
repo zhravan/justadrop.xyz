@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-api dev-view dev-dashboard build build-packages build-apps build-api build-view build-dashboard clean typecheck db-generate db-migrate db-studio docker-up docker-down docker-build docker-dev-up docker-dev-down
+.PHONY: help install setup setup-env setup-db dev dev-api dev-view dev-dashboard build build-packages build-apps build-api build-view build-dashboard clean typecheck db-generate db-migrate db-studio db-reset format format-check lint docker-up docker-down docker-build docker-dev-up docker-dev-down
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -8,6 +8,15 @@ help: ## Show this help message
 
 install: ## Install dependencies
 	bun install
+
+setup: ## Run initial setup (env + database)
+	bun run setup
+
+setup-env: ## Copy .env.example to .env if not exists
+	bun run setup:env
+
+setup-db: ## Start database and run migrations
+	bun run setup:db
 
 dev: ## Start all apps in development mode
 	bun run dev
@@ -56,6 +65,18 @@ db-studio: ## Open Drizzle Studio
 
 db-cleanup: ## Cleanup expired sessions and OTP tokens
 	bun run db:cleanup
+
+db-reset: ## Reset database (removes volumes and re-runs migrations)
+	bun run db:reset
+
+format: ## Format all code with Prettier
+	bun run format
+
+format-check: ## Check code formatting
+	bun run format:check
+
+lint: ## Run linting (format check + typecheck)
+	bun run lint
 
 docker-up: ## Start all services with Docker Compose
 	docker-compose up -d
