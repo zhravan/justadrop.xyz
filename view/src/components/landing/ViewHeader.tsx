@@ -2,8 +2,9 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import { useClickOutside } from '@/hooks';
+import { useAuth } from '@/lib/auth/use-auth';
 
 const navLinks = [
   { href: '/opportunities', label: 'Opportunities' },
@@ -14,9 +15,14 @@ const navLinks = [
 
 export function ViewHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const closeMenu = useCallback(() => setMobileMenuOpen(false), []);
+  const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
   useClickOutside(menuRef, mobileMenuOpen, closeMenu);
+  useClickOutside(userMenuRef, userMenuOpen, closeUserMenu);
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-foreground/5 bg-white/80 backdrop-blur-xl">
@@ -41,12 +47,43 @@ export function ViewHeader() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            className="ml-2 rounded-full bg-jad-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-jad-primary/25 transition-all duration-200 hover:bg-jad-dark hover:shadow-xl hover:shadow-jad-primary/30 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Login
-          </Link>
+          {isAuthenticated && user ? (
+            <div ref={userMenuRef} className="relative ml-2">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 rounded-full border border-jad-primary/20 bg-jad-mint/50 px-4 py-2.5 text-sm font-medium text-jad-foreground transition-all hover:bg-jad-mint"
+              >
+                <User className="h-4 w-4" />
+                <span className="max-w-[120px] truncate">{user.email}</span>
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-foreground/10 bg-white py-2 shadow-xl">
+                  <div className="px-4 py-2 text-sm text-foreground/70">
+                    {user.email}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setUserMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-jad-mint/60"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="ml-2 rounded-full bg-jad-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-jad-primary/25 transition-all duration-200 hover:bg-jad-dark hover:shadow-xl hover:shadow-jad-primary/30 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Login
+            </Link>
+          )}
         </nav>
 
         {/* Mobile menu button */}
@@ -78,13 +115,32 @@ export function ViewHeader() {
                 </Link>
               ))}
               <div className="border-t border-foreground/5 px-5 py-3">
-                <Link
-                  href="/login"
-                  onClick={closeMenu}
-                  className="block w-full rounded-full bg-jad-primary py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-jad-dark"
-                >
-                  Login
-                </Link>
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="px-2 py-1.5 text-xs text-foreground/60 truncate">
+                      {user.email}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logout();
+                        closeMenu();
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-full border border-jad-primary/20 py-2.5 text-sm font-medium text-jad-foreground"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={closeMenu}
+                    className="block w-full rounded-full bg-jad-primary py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-jad-dark"
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
             </div>
           )}
