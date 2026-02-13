@@ -2,8 +2,8 @@ import { ViewHeader } from '@/components/landing';
 import { TeamHero, TeamGrid, TeamCTA } from '@/components/team';
 
 export const metadata = {
-  title: 'Team | just a drop',
-  description: 'Meet the people behind just a drop – building a unified volunteering ecosystem.',
+  title: 'Team | juztadrop',
+  description: 'Meet the people behind juztadrop – building a unified volunteering ecosystem.',
 };
 
 export default function TeamPage() {

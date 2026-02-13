@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export function Header({ 
-  title = 'Just a Drop', 
+  title = 'juztadrop', 
   logo,
   nav,
   children 

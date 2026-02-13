@@ -1,8 +1,8 @@
 import { InProgressPage } from '@/components/common/InProgressPage';
 
 export const metadata = {
-  title: 'About | just a drop',
-  description: 'Learn about just a drop and our mission.',
+  title: 'About | juztadrop',
+  description: 'Learn about juztadrop and our mission.',
 };
 
 export default function AboutPage() {

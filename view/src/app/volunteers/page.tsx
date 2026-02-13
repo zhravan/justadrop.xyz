@@ -1,7 +1,7 @@
 import { InProgressPage } from '@/components/common/InProgressPage';
 
 export const metadata = {
-  title: 'Volunteers | just a drop',
+  title: 'Volunteers | juztadrop',
   description: 'Meet volunteers making a difference.',
 };
 

@@ -10,7 +10,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Just a Drop',
+  title: 'juztadrop',
   description: 'A platform connecting volunteers with organizations',
 };
 
