@@ -1,3 +1,12 @@
+# [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.16...v1.0.0) (2026-02-13)
+
+
+### Features
+
+* docker dev with hot reload ([562c5ff](https://github.com/zhravan/justadrop.xyz/commit/562c5ff1fc002e014ac2ce25b646b53623efca9f))
+
+
+
 # [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.15...v1.0.0) (2026-02-13)
 
 
