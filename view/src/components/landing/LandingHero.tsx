@@ -6,7 +6,7 @@ import { ArrowRight, Search } from 'lucide-react';
 
 export function LandingHero() {
   return (
-    <section className="relative overflow-hidden bg-jad-primary pt-24 pb-16 md:pt-32 md:pb-24">
+    <section className="relative overflow-hidden bg-jad-primary pt-20 pb-12 sm:pt-24 sm:pb-16 md:pt-32 md:pb-24">
       {/* Depth gradient */}
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -17,46 +17,53 @@ export function LandingHero() {
       />
 
       <div className="container relative z-10">
-        <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
+        <div className="grid gap-8 sm:gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
           <div className="flex flex-col justify-center">
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-white md:text-5xl lg:text-6xl xl:text-7xl">
+            <h1 className="text-2xl font-bold leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
               Small Actions
               <br />
               <span className="text-jad-mint">Lasting Impacts</span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/90 md:text-xl">
+            <p className="mt-4 max-w-lg text-base leading-relaxed text-white/90 sm:mt-6 sm:text-lg md:text-xl">
               Connect with local ❤️ NGOs and charities that need your help 👋
             </p>
 
             {/* Search - floating card feel */}
-            <div className="mt-10">
-              <div className="flex flex-col gap-3 rounded-2xl bg-white/95 p-3 shadow-2xl shadow-jad-foreground/20 backdrop-blur sm:flex-row sm:items-stretch sm:gap-0 sm:p-2">
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:flex-row sm:items-center sm:gap-2 sm:rounded-l-xl sm:rounded-r-none">
-                  <label htmlFor="search-where" className="shrink-0 text-xs font-semibold text-jad-foreground/70 sm:w-14">Where</label>
-                  <input
-                    id="search-where"
-                    type="text"
-                    placeholder="Eg. Kolkata"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none"
-                  />
+            <div className="mt-6 sm:mt-10">
+              <div className="flex flex-col gap-3 rounded-2xl bg-white/95 p-3 shadow-2xl shadow-jad-foreground/20 backdrop-blur sm:flex-row sm:items-center sm:gap-0 sm:p-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:rounded-l-xl sm:rounded-r-none">
+                  <span className="shrink-0 text-jad-foreground/50">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-jad-foreground/60">Where</span>
+                    <input type="text" placeholder="Eg. Kolkata" className="w-full bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none" />
+                  </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:flex-row sm:items-center sm:gap-2 sm:rounded-none">
-                  <label htmlFor="search-category" className="shrink-0 text-xs font-semibold text-jad-foreground/70 sm:w-16">Category</label>
-                  <input
-                    id="search-category"
-                    type="text"
-                    placeholder="Eg. Care"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none"
-                  />
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:rounded-none">
+                  <span className="shrink-0 text-jad-foreground/50">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-jad-foreground/60">Category</span>
+                    <input type="text" placeholder="Eg. Care" className="w-full bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none" />
+                  </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:flex-row sm:items-center sm:gap-2 sm:rounded-none">
-                  <label htmlFor="search-when" className="shrink-0 text-xs font-semibold text-jad-foreground/70 sm:w-12">When</label>
-                  <input
-                    id="search-when"
-                    type="text"
-                    placeholder="Eg. Tomorrow"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none"
-                  />
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-jad-mint/30 px-4 py-3 transition-colors focus-within:bg-jad-mint/50 sm:rounded-none">
+                  <span className="shrink-0 text-jad-foreground/50">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-jad-foreground/60">When</span>
+                    <input type="text" placeholder="Tomorrow" className="w-full bg-transparent text-sm text-jad-foreground placeholder:text-jad-foreground/50 focus:outline-none" />
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -78,7 +85,7 @@ export function LandingHero() {
             </div>
           </div>
 
-          <div className="relative hidden lg:block">
+          <div className="relative mt-10 lg:mt-0 lg:block">
             <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-2xl shadow-jad-foreground/30 ring-4 ring-white/20">
               <Image
                 src="/images/hero-volunteers.png"
@@ -86,7 +93,7 @@ export function LandingHero() {
                 fill
                 className="object-cover transition-transform duration-500 hover:scale-105"
                 priority
-                sizes="(max-width: 1024px) 0vw, 45vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 50vw"
               />
             </div>
           </div>

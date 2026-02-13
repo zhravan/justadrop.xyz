@@ -31,8 +31,8 @@ export function TeamMemberCard({
   return (
     <article
       style={style}
-      className={cn(
-        'group relative overflow-hidden rounded-2xl border border-jad-primary/10 bg-white p-6 shadow-lg shadow-jad-foreground/5 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-jad-primary/15 hover:border-jad-primary/20',
+        className={cn(
+          'group relative overflow-hidden rounded-2xl border border-jad-primary/10 bg-white p-4 shadow-lg shadow-jad-foreground/5 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-jad-primary/15 hover:border-jad-primary/20 sm:p-6',
         size === 'lg' && 'md:row-span-2 md:p-8',
         size === 'md' && 'md:p-6',
         size === 'sm' && 'md:p-5',

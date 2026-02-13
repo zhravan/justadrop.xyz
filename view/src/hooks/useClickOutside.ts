@@ -13,7 +13,7 @@ export function useClickOutside<T extends HTMLElement>(
 
     function handleClickOutside(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        onClickOutside(event);
+        onClickOutside();
       }
     }
 

@@ -11,11 +11,11 @@ export function HowItWorksSection() {
   const steps = flow === 'volunteer' ? VOLUNTEER_STEPS : NGO_STEPS;
 
   return (
-    <section className="bg-jad-primary py-16 md:py-20">
+    <section className="bg-jad-primary py-12 sm:py-16 md:py-20">
       <div className="container">
         <div className="flex flex-col items-center gap-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-jad-mint md:text-4xl">
+            <h2 className="text-xl font-bold tracking-tight text-jad-mint sm:text-2xl md:text-3xl">
               How it works
             </h2>
             <p className="mt-1 text-sm text-jad-mint/80">
@@ -50,7 +50,7 @@ export function HowItWorksSection() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {steps.map((step) => (
             <div
               key={step.number}

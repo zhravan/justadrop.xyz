@@ -26,10 +26,10 @@ export function GetInvolvedSection() {
   });
 
   return (
-    <section className="bg-jad-mint/40 py-20 md:py-28">
+    <section className="bg-jad-mint/40 py-12 sm:py-16 md:py-24 lg:py-28">
       <div className="container">
         <div className="flex flex-wrap items-center gap-4">
-          <h2 className="text-3xl font-bold tracking-tight text-jad-foreground md:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight text-jad-foreground sm:text-3xl md:text-4xl">
             Get involved near you
           </h2>
           <div ref={locationRef} className="relative">
@@ -67,7 +67,7 @@ export function GetInvolvedSection() {
           </div>
         </div>
 
-        <div className="mt-10 overflow-hidden">
+        <div className="mt-6 overflow-hidden sm:mt-10">
           <div
             ref={scrollRef}
             className="flex gap-6 overflow-x-auto pb-4 scroll-smooth scrollbar-hide md:snap-x md:snap-mandatory [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
@@ -75,7 +75,7 @@ export function GetInvolvedSection() {
             {OPPORTUNITIES.map((opp) => (
               <article
                 key={opp.id}
-                className="group relative min-w-[280px] shrink-0 overflow-hidden rounded-2xl border-0 bg-white p-6 shadow-lg shadow-jad-foreground/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-jad-primary/15 md:min-w-[320px] md:snap-center"
+                className="group relative min-w-[260px] shrink-0 overflow-hidden rounded-2xl border-0 bg-white p-4 shadow-lg shadow-jad-foreground/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-jad-primary/15 sm:min-w-[280px] sm:p-6 md:min-w-[320px] md:snap-center"
               >
                 <div className="absolute right-4 top-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-jad-primary/10 text-jad-primary">
@@ -110,7 +110,7 @@ export function GetInvolvedSection() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-6">
+        <div className="mt-6 flex items-center justify-center gap-4 sm:mt-8 sm:gap-6">
           <button
             type="button"
             onClick={goToPrevPage}
