@@ -3,12 +3,32 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, Loader2, Upload, FileText } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  Loader2,
+  Upload,
+  FileText,
+  MapPin,
+  Mail,
+  User,
+  Globe,
+  FileCheck,
+} from 'lucide-react';
 import { ViewHeader, ViewFooter } from '@/components/landing';
 import { useAuth } from '@/lib/auth/use-auth';
 import { LOCATIONS, VOLUNTEER_CAUSES } from '@/lib/constants';
 import { cn } from '@/lib/common';
 import { toast } from 'sonner';
+import {
+  FormField,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  FormSection,
+  ChipGroup,
+  FormActions,
+} from '@/components/ui/form';
 
 const ORG_TYPES = ['NGO', 'NPO', 'Trust', 'Foundation', 'Society'] as const;
 
@@ -83,7 +103,10 @@ export default function CreateOrganisationPage() {
       <div className="min-h-screen flex flex-col">
         <ViewHeader />
         <main className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-jad-foreground/60">Loading...</div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-jad-primary border-t-transparent" />
+            <p className="text-sm text-foreground/60">Loading...</p>
+          </div>
         </main>
       </div>
     );
@@ -107,283 +130,234 @@ export default function CreateOrganisationPage() {
             Back
           </Link>
 
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-jad-mint text-jad-primary">
-              <Building2 className="h-6 w-6" />
+          <div className="flex items-center gap-4 mb-10">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-jad-mint text-jad-primary shadow-lg shadow-jad-primary/10">
+              <Building2 className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-jad-foreground">
+              <h1 className="text-2xl font-bold text-jad-foreground sm:text-3xl">
                 Register your organisation
               </h1>
-              <p className="text-sm text-foreground/70">
-                Tell us about your NGO. We&apos;ll verify your details before you can post opportunities.
+              <p className="mt-1 text-sm text-foreground/70">
+                We&apos;ll verify your details before you can post opportunities.
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label htmlFor="orgName" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  Organisation name
-                </label>
-                <input
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <FormSection
+              title="Basic information"
+              description="Your organisation's legal and identity details"
+              icon={<Building2 className="h-5 w-5" />}
+            >
+              <FormField label="Organisation name" htmlFor="orgName" required>
+                <FormInput
                   id="orgName"
                   type="text"
                   value={form.orgName}
                   onChange={(e) => setForm({ ...form, orgName: e.target.value })}
                   placeholder="e.g. Ocean Guardians"
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
                   required
                 />
-              </div>
-              <div>
-                <label htmlFor="type" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  Organisation type
-                </label>
-                <select
-                  id="type"
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-                  required
-                >
-                  <option value="">Select type</option>
-                  {ORG_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="registrationNumber" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  Registration number
-                </label>
-                <input
-                  id="registrationNumber"
-                  type="text"
-                  value={form.registrationNumber}
-                  onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })}
-                  placeholder="e.g. 80G/12345"
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-jad-foreground mb-2">
-                Focus causes
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {VOLUNTEER_CAUSES.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => toggleCause(value)}
-                    className={cn(
-                      'rounded-full px-4 py-2 text-sm font-medium transition-all',
-                      form.causes.includes(value)
-                        ? 'bg-jad-primary text-white'
-                        : 'border border-foreground/20 bg-white text-foreground/80 hover:border-jad-primary/40'
-                    )}
+              </FormField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Organisation type" htmlFor="type">
+                  <FormSelect
+                    id="type"
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
                   >
-                    {label}
-                  </button>
-                ))}
+                    <option value="">Select type</option>
+                    {ORG_TYPES.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </FormSelect>
+                </FormField>
+                <FormField label="Registration number" htmlFor="registrationNumber">
+                  <FormInput
+                    id="registrationNumber"
+                    type="text"
+                    value={form.registrationNumber}
+                    onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })}
+                    placeholder="e.g. 80G/12345"
+                  />
+                </FormField>
               </div>
-            </div>
+            </FormSection>
 
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                Address
-              </label>
-              <input
-                id="address"
-                type="text"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Street address"
-                className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-                required
+            <FormSection
+              title="Focus causes"
+              description="Which causes does your organisation work towards?"
+              icon={<Globe className="h-5 w-5" />}
+            >
+              <ChipGroup
+                options={VOLUNTEER_CAUSES}
+                selected={form.causes}
+                onChange={toggleCause}
               />
-            </div>
+            </FormSection>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  City
-                </label>
-                <select
-                  id="city"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-                >
-                  <option value="">Select city</option>
-                  {LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  State (optional)
-                </label>
-                <input
-                  id="state"
+            <FormSection
+              title="Address"
+              description="Where is your organisation located?"
+              icon={<MapPin className="h-5 w-5" />}
+            >
+              <FormField label="Street address" htmlFor="address" required>
+                <FormInput
+                  id="address"
                   type="text"
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value })}
-                  placeholder="e.g. West Bengal"
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Street address"
+                  required
                 />
+              </FormField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="City" htmlFor="city">
+                  <FormSelect
+                    id="city"
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  >
+                    <option value="">Select city</option>
+                    {LOCATIONS.map((loc) => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </FormSelect>
+                </FormField>
+                <FormField label="State" htmlFor="state">
+                  <FormInput
+                    id="state"
+                    type="text"
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    placeholder="e.g. West Bengal"
+                  />
+                </FormField>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="contactPersonName" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  Contact person
-                </label>
-                <input
+            <FormSection
+              title="Contact person"
+              description="Primary contact for the organisation"
+              icon={<User className="h-5 w-5" />}
+            >
+              <FormField label="Contact person" htmlFor="contactPersonName" required>
+                <FormInput
                   id="contactPersonName"
                   type="text"
                   value={form.contactPersonName}
                   onChange={(e) => setForm({ ...form, contactPersonName: e.target.value })}
                   placeholder="e.g. John Doe"
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
                   required
                 />
-              </div>
-              <div>
-                <label htmlFor="contactPersonNumber" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                  Phone
-                </label>
-                <input
+              </FormField>
+              <FormField label="Organisation email" htmlFor="contactPersonEmail" required>
+                <FormInput
+                  id="contactPersonEmail"
+                  type="email"
+                  value={form.contactPersonEmail}
+                  onChange={(e) => setForm({ ...form, contactPersonEmail: e.target.value })}
+                  placeholder="contact@org.org"
+                  icon={<Mail className="h-5 w-5" />}
+                  required
+                />
+              </FormField>
+              <FormField label="Phone" htmlFor="contactPersonNumber">
+                <FormInput
                   id="contactPersonNumber"
                   type="tel"
                   value={form.contactPersonNumber}
                   onChange={(e) => setForm({ ...form, contactPersonNumber: e.target.value })}
                   placeholder="+91 98765 43210"
-                  className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
                 />
-              </div>
-            </div>
+              </FormField>
+            </FormSection>
 
-            <div>
-              <label htmlFor="contactPersonEmail" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                Organisation email
-              </label>
-              <input
-                id="contactPersonEmail"
-                type="email"
-                value={form.contactPersonEmail}
-                onChange={(e) => setForm({ ...form, contactPersonEmail: e.target.value })}
-                placeholder="contact@org.org"
-                className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-                required
-              />
-            </div>
+            <FormSection
+              title="About your organisation"
+              description="Share your mission and impact"
+              icon={<FileText className="h-5 w-5" />}
+            >
+              <FormField label="Website" htmlFor="website">
+                <FormInput
+                  id="website"
+                  type="url"
+                  value={form.website}
+                  onChange={(e) => setForm({ ...form, website: e.target.value })}
+                  placeholder="https://..."
+                />
+              </FormField>
+              <FormField label="About" htmlFor="description">
+                <FormTextarea
+                  id="description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Your mission, focus areas, and impact..."
+                  rows={4}
+                  maxLength={10000}
+                  showCount
+                />
+              </FormField>
+            </FormSection>
 
-            <div>
-              <label htmlFor="website" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                Website (optional)
-              </label>
-              <input
-                id="website"
-                type="url"
-                value={form.website}
-                onChange={(e) => setForm({ ...form, website: e.target.value })}
-                placeholder="https://..."
-                className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-jad-foreground mb-1.5">
-                About your organisation
-              </label>
-              <textarea
-                id="description"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Your mission, focus areas, and impact..."
-                rows={4}
-                className="w-full rounded-xl border border-foreground/15 bg-white px-4 py-2.5 text-sm text-jad-foreground placeholder:text-foreground/40 focus:border-jad-primary focus:outline-none focus:ring-2 focus:ring-jad-primary/20 resize-none"
-              />
-            </div>
-
-            <div className="space-y-4 rounded-xl border-2 border-dashed border-jad-primary/20 bg-jad-mint/20 p-6">
-              <h3 className="text-sm font-semibold text-jad-foreground flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Documents (coming soon)
-              </h3>
-              <p className="text-xs text-foreground/60">
+            <FormSection
+              title="Documents"
+              description="Verification documents (coming soon)"
+              icon={<FileCheck className="h-5 w-5" />}
+            >
+              <p className="text-sm text-foreground/60">
                 Document upload will be available soon. Your organisation will be verified after submission.
               </p>
-              <div>
-                <label className="block text-sm font-medium text-jad-foreground mb-2">
-                  Registration certificate (PDF, max 5MB)
-                </label>
-                <label className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-lg border border-foreground/15 bg-white px-4 py-3 transition-colors hover:border-jad-primary/40',
-                  form.registrationDoc && 'border-jad-primary/40 bg-jad-mint/30'
-                )}>
-                  <Upload className="h-5 w-5 text-jad-primary" />
-                  <span className="text-sm text-foreground/80">
-                    {form.registrationDoc?.name ?? 'Choose file'}
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange('registrationDoc')}
-                    className="hidden"
-                  />
-                </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Registration certificate">
+                  <label
+                    className={cn(
+                      'flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-foreground/15 bg-white px-4 py-4 transition-all hover:border-jad-primary/30 hover:bg-jad-mint/20',
+                      form.registrationDoc && 'border-jad-primary/40 bg-jad-mint/30'
+                    )}
+                  >
+                    <Upload className="h-5 w-5 text-jad-primary shrink-0" />
+                    <span className="text-sm text-foreground/80 truncate">
+                      {form.registrationDoc?.name ?? 'Choose PDF (max 5MB)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange('registrationDoc')}
+                      className="hidden"
+                    />
+                  </label>
+                </FormField>
+                <FormField label="Proof of address">
+                  <label
+                    className={cn(
+                      'flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-foreground/15 bg-white px-4 py-4 transition-all hover:border-jad-primary/30 hover:bg-jad-mint/20',
+                      form.proofDoc && 'border-jad-primary/40 bg-jad-mint/30'
+                    )}
+                  >
+                    <Upload className="h-5 w-5 text-jad-primary shrink-0" />
+                    <span className="text-sm text-foreground/80 truncate">
+                      {form.proofDoc?.name ?? 'Choose file'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileChange('proofDoc')}
+                      className="hidden"
+                    />
+                  </label>
+                </FormField>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-jad-foreground mb-2">
-                  Proof of address (optional)
-                </label>
-                <label className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-lg border border-foreground/15 bg-white px-4 py-3 transition-colors hover:border-jad-primary/40',
-                  form.proofDoc && 'border-jad-primary/40 bg-jad-mint/30'
-                )}>
-                  <Upload className="h-5 w-5 text-jad-primary" />
-                  <span className="text-sm text-foreground/80">
-                    {form.proofDoc?.name ?? 'Choose file'}
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange('proofDoc')}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
+            </FormSection>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4">
-              <Link
-                href="/dashboard"
-                className="text-center text-sm font-medium text-foreground/70 hover:text-jad-primary"
-              >
-                Save draft
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting || !form.orgName || !form.contactPersonName || !form.contactPersonEmail}
-                className="rounded-xl bg-jad-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-jad-primary/25 transition-all hover:bg-jad-dark disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit for verification'
-                )}
-              </button>
-            </div>
+            <FormActions
+              submitLabel="Submit for verification"
+              secondaryLabel="Save draft"
+              secondaryHref="/dashboard"
+              loading={submitting}
+              disabled={!form.orgName || !form.contactPersonName || !form.contactPersonEmail}
+            />
           </form>
         </div>
       </main>
