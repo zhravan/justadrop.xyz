@@ -37,11 +37,34 @@ packages/
 # 1. Install dependencies
 bun install
 
-# 2. Run setup script (creates .env, starts DB, runs migrations)
+# 2. Build packages (required after install)
+bun run build:packages
+
+# 3. Run setup script (creates .env, starts DB, runs migrations)
 bun run setup
 
-# 3. Start development servers
+# 4. Start development servers
 bun run dev
+```
+
+**Note:** With `linker = "hoisted"` in `bunfig.toml`, packages are installed in the root `node_modules` (npm-style). If you prefer isolated linking (packages in each workspace's `node_modules`), change it to `linker = "isolated"` in `bunfig.toml`.
+
+### Windows Users
+
+If `bun install` fails on Windows, try:
+
+```bash
+# Option 1: Run as Administrator (if file permission errors)
+# Right-click terminal → Run as Administrator, then:
+bun install
+
+# Option 2: Use npm as fallback (if Bun workspace issues persist)
+npm install
+npm run build:packages
+
+# Option 3: Clear cache and retry
+rm -rf node_modules bun.lockb
+bun install
 ```
 
 ## Manual Setup

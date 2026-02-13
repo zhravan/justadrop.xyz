@@ -1,3 +1,10 @@
 [install]
 # Use workspace protocol for internal packages
 workspace = true
+# Linker mode: "hoisted" (npm-style) or "isolated" (default for workspaces)
+# "hoisted" - packages appear in root node_modules (easier to see)
+# "isolated" - packages stay in workspace node_modules (prevents phantom deps)
+linker = "hoisted"
+# Windows compatibility: reduce concurrency to avoid file locking issues
+# Lower concurrency helps prevent EPERM errors on Windows
+concurrency = 2

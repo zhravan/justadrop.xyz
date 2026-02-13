@@ -11,8 +11,8 @@
   ],
   "scripts": {
     "setup": "bun run setup:env && bun run setup:db",
-    "setup:env": "test -f .env || cp .env.example .env",
-    "setup:db": "docker-compose -f docker-compose.dev.yml up -d postgres && sleep 3 && bun run db:migrate",
+    "setup:env": "node -e \"const fs=require('fs');if(!fs.existsSync('.env'))fs.copyFileSync('.env.example','.env')\"",
+    "setup:db": "docker-compose -f docker-compose.dev.yml up -d postgres && node -e \"setTimeout(()=>process.exit(0),3000)\" && bun run db:migrate",
     "dev": "bun run --filter '*' dev",
     "dev:api": "bun --cwd apps/api dev",
     "dev:view": "bun --cwd apps/view dev",
@@ -31,8 +31,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "bun run --filter '*' clean",
     "typecheck": "bun run --filter '*' typecheck",
-    "lint": "bun run format:check && bun run typecheck",
-    "postinstall": "bun run build:packages"
+    "lint": "bun run format:check && bun run typecheck"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
