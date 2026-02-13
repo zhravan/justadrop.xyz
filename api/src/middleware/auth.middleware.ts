@@ -8,11 +8,12 @@ const sessionService = container.getServices().session;
 export const authMiddleware = new Elysia({ name: 'auth' })
   .use(cookie())
   .derive(async ({ cookie: { sessionToken } }) => {
-    if (!sessionToken) {
+    const token = sessionToken?.value;
+    if (!token) {
       throw new UnauthorizedError('Authentication required');
     }
 
-    const session = await sessionService.validateSession(sessionToken);
+    const session = await sessionService.validateSession(token);
     if (!session) {
       throw new UnauthorizedError('Invalid or expired session');
     }

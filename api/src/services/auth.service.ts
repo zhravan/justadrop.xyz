@@ -3,6 +3,7 @@ import { SessionService } from './session.service';
 import { EmailService } from './email.service';
 import { UserRepository } from '../repositories/user.repository';
 import { logger } from '../utils/logger';
+import { ValidationError, ForbiddenError } from '../utils/errors';
 
 export class AuthService {
   constructor(
@@ -22,7 +23,7 @@ export class AuthService {
 
     const isValid = await this.otpService.verifyOtp(normalizedEmail, code);
     if (!isValid) {
-      throw new Error('Invalid or expired OTP code');
+      throw new ValidationError('Invalid or expired OTP code');
     }
 
     let user = await this.userRepository.findByEmail(normalizedEmail);
@@ -37,12 +38,12 @@ export class AuthService {
       await this.userRepository.updateEmailVerified(user.id, true);
       user = await this.userRepository.findById(user.id);
       if (!user) {
-        throw new Error('Failed to update user');
+        throw new Error('Failed to update user'); // Internal error, keep as Error
       }
     }
 
     if (user.isBanned || user.deletedAt) {
-      throw new Error('Account is banned or deleted');
+      throw new ForbiddenError('Account is banned or deleted');
     }
 
     const token = await this.sessionService.createSession(user.id);

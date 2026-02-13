@@ -8,7 +8,7 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   .use(cookie())
   .post(
     '/otp/send',
-    async ({ body, setCookie }) => {
+    async ({ body }) => {
       const result = await authController.sendOtp(body);
       return result;
     },
@@ -20,16 +20,17 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   )
   .post(
     '/otp/verify',
-    async ({ body, setCookie }) => {
+    async ({ body, cookie }) => {
       const result = await authController.verifyOtp(body);
       
-      setCookie('sessionToken', result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: '/',
-      });
+      // Use reactive cookie system - assign value directly
+      const sessionToken = cookie.sessionToken;
+      sessionToken.value = result.token;
+      sessionToken.httpOnly = true;
+      sessionToken.secure = process.env.NODE_ENV === 'production';
+      sessionToken.sameSite = 'lax';
+      sessionToken.maxAge = 30 * 24 * 60 * 60; // 30 days
+      sessionToken.path = '/';
       
       return {
         user: result.user,
@@ -43,19 +44,23 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
       }),
     }
   )
-  .post('/logout', async ({ cookie: { sessionToken }, setCookie }) => {
-    await authController.logout(sessionToken);
+  .post('/logout', async ({ cookie }) => {
+    const sessionToken = cookie.sessionToken;
+    const token = sessionToken?.value;
     
-    setCookie('sessionToken', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/',
-    });
+    if (token) {
+      await authController.logout(token);
+    }
+    
+    // Clear cookie by removing it
+    if (sessionToken) {
+      sessionToken.remove();
+    }
     
     return { message: 'Logged out successfully' };
   })
-  .get('/me', async ({ cookie: { sessionToken } }) => {
-    return await authController.getCurrentUser(sessionToken);
+  .get('/me', async ({ cookie }) => {
+    const sessionToken = cookie.sessionToken;
+    const token = sessionToken?.value;
+    return await authController.getCurrentUser(token);
   });

@@ -1,0 +1,15 @@
+# Bun test configuration
+# This file configures Bun's test runner
+
+[test]
+# Timeout for individual tests (in milliseconds)
+timeout = 30000
+
+# Number of concurrent test files to run
+concurrent = 1
+
+# Preload files before running tests
+preload = []
+
+# Coverage settings
+coverage = false
