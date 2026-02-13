@@ -1,3 +1,12 @@
+# [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.15...v1.0.0) (2026-02-13)
+
+
+### Bug Fixes
+
+* resolve windows bun setup ([2c4bd60](https://github.com/zhravan/justadrop.xyz/commit/2c4bd605feba0a067c6bc6e128ef5a3d26a5c6ef))
+
+
+
 # [1.0.0](https://github.com/zhravan/justadrop.xyz/compare/v1.0.14...v1.0.0) (2026-02-13)
 
 
