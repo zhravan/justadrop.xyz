@@ -22,19 +22,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Copy session cookie from API response to our domain
-    const setCookie = res.headers.get('set-cookie');
-    if (setCookie) {
-      const match = setCookie.match(/sessionToken=([^;]+)/);
-      if (match) {
-        const token = match[1];
+    const setCookieHeaders =
+      (typeof res.headers.getSetCookie === 'function'
+        ? res.headers.getSetCookie()
+        : null) ?? (res.headers.get('set-cookie') ? [res.headers.get('set-cookie')!] : []);
+    for (const header of setCookieHeaders) {
+      const match = header.match(/sessionToken=([^;\s]+)/);
+      if (match?.[1]) {
         const cookieStore = await cookies();
-        cookieStore.set('sessionToken', token, {
+        cookieStore.set('sessionToken', match[1], {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           path: '/',
           maxAge: 30 * 24 * 60 * 60, // 30 days
         });
+        break;
       }
     }
 
