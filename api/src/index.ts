@@ -9,6 +9,12 @@ import { logger } from './utils/logger';
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldRunMigrations = process.env.RUN_MIGRATIONS !== 'false';
 
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+  : isProduction
+    ? []
+    : ['http://localhost:3000', 'http://localhost:3002'];
+
 // Track server state for graceful shutdown
 let server: Elysia | null = null;
 let isShuttingDown = false;
@@ -88,7 +94,12 @@ async function startServer() {
   }
 
   const app = new Elysia()
-    .use(cors())
+    .use(
+      cors({
+        origin: corsOrigin.length > 0 ? corsOrigin : isProduction ? false : true,
+        credentials: true,
+      })
+    )
     .use(errorHandler)
     .use(responseEnvelope);
 

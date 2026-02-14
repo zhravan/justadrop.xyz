@@ -1,4 +1,5 @@
 import { db, users } from '../db/index.js';
+import type { VolunteeringData } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -11,7 +12,7 @@ export interface User {
   phone: string | null;
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
   isBanned: boolean;
-  volunteering: any;
+  volunteering: VolunteeringData | null;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

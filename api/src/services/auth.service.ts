@@ -1,3 +1,4 @@
+import type { AuthUser } from '../types/auth.js';
 import { OtpService } from './otp.service';
 import { SessionService } from './session.service';
 import { EmailService } from './email.service';
@@ -18,7 +19,7 @@ export class AuthService {
     await this.otpService.generateAndSendOtp(normalizedEmail);
   }
 
-  async verifyOtpAndLogin(email: string, code: string): Promise<{ token: string; user: any; isNewUser: boolean }> {
+  async verifyOtpAndLogin(email: string, code: string): Promise<{ token: string; user: AuthUser; isNewUser: boolean }> {
     const normalizedEmail = email.toLowerCase().trim();
 
     const isValid = await this.otpService.verifyOtp(normalizedEmail, code);
@@ -48,27 +49,36 @@ export class AuthService {
 
     const token = await this.sessionService.createSession(user.id);
 
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        emailVerified: user.emailVerified,
-      },
-      isNewUser,
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      emailVerified: user.emailVerified,
+      ...(user.volunteering && { volunteering: user.volunteering }),
+      ...(user.phone != null && { phone: user.phone }),
+      ...(user.gender != null && { gender: user.gender }),
     };
+    return { token, user: authUser, isNewUser };
   }
 
   async logout(token: string): Promise<void> {
     await this.sessionService.deleteSession(token);
   }
 
-  async getCurrentUser(token: string): Promise<any> {
+  async getCurrentUser(token: string): Promise<AuthUser | null> {
     const session = await this.sessionService.validateSession(token);
     if (!session) {
       return null;
     }
-    return session.user;
+    const u = session.user;
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      emailVerified: u.emailVerified,
+      ...(u.volunteering && { volunteering: u.volunteering }),
+      ...(u.phone != null && { phone: u.phone }),
+      ...(u.gender != null && { gender: u.gender }),
+    };
   }
 }

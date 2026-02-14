@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, ArrowLeft, Loader2, KeyRound } from 'lucide-react';
@@ -29,12 +29,40 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Redirect if already logged in
-  if (isFetched && user) {
-    router.replace(redirectTo);
-    return null;
-  }
+  useEffect(() => {
+    if (isFetched && user) {
+      router.replace(redirectTo);
+    }
+  }, [isFetched, user, redirectTo, router]);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startCooldown = () => {
+    if (cooldownIntervalRef.current) {
+      clearInterval(cooldownIntervalRef.current);
+    }
+    setResendCooldown(RESEND_COOLDOWN_SEC);
+    cooldownIntervalRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownIntervalRef.current) {
+            clearInterval(cooldownIntervalRef.current);
+            cooldownIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,16 +78,7 @@ export default function LoginPage() {
       setEmail(trimmed);
       setStep('otp');
       setOtp('');
-      setResendCooldown(RESEND_COOLDOWN_SEC);
-      const interval = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startCooldown();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send code');
     } finally {
@@ -73,16 +92,7 @@ export default function LoginPage() {
     try {
       await authClient.sendOtp(email);
       toast.success('Code resent');
-      setResendCooldown(RESEND_COOLDOWN_SEC);
-      const interval = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startCooldown();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to resend');
     } finally {
@@ -125,6 +135,18 @@ export default function LoginPage() {
     setStep('email');
     setOtp('');
   };
+
+  if (isFetched && user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <ViewHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-jad-primary" />
+        </main>
+        <ViewFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

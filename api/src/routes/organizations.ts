@@ -2,27 +2,11 @@ import { Elysia, t } from 'elysia';
 import { cookie } from '@elysiajs/cookie';
 import { container } from '../container';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { CAUSE_VALUES } from '../constants/causes.js';
 
 const organizationRepository = container.getRepositories().organization;
 
-const causeEnum = [
-  'animal_welfare',
-  'environmental',
-  'humanitarian',
-  'education',
-  'healthcare',
-  'poverty_alleviation',
-  'women_empowerment',
-  'child_welfare',
-  'elderly_care',
-  'disability_support',
-  'rural_development',
-  'urban_development',
-  'arts_culture',
-  'sports',
-  'technology',
-  'other',
-] as const;
+const causeSchema = t.Array(t.String({ pattern: `^(${CAUSE_VALUES.join('|')})$` }));
 
 export const organizationsRouter = new Elysia({ prefix: '/organizations', tags: ['organizations'] })
   .use(cookie())
@@ -51,7 +35,7 @@ export const organizationsRouter = new Elysia({ prefix: '/organizations', tags: 
       body: t.Object({
         orgName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
-        causes: t.Optional(t.Array(t.String())),
+        causes: t.Optional(causeSchema),
         website: t.Optional(t.String()),
         registrationNumber: t.Optional(t.String()),
         contactPersonName: t.String({ minLength: 1 }),

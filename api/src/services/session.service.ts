@@ -1,4 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
+import type { User } from '../repositories/user.repository.js';
 import { SessionRepository } from '../repositories/session.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { logger } from '../utils/logger';
@@ -20,7 +21,7 @@ export class SessionService {
     return token;
   }
 
-  async validateSession(token: string): Promise<{ userId: string; user: any } | null> {
+  async validateSession(token: string): Promise<{ userId: string; user: User } | null> {
     const session = await this.sessionRepository.findByToken(token);
 
     if (!session) {

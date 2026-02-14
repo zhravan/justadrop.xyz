@@ -2,8 +2,11 @@ import { Elysia, t } from 'elysia';
 import { cookie } from '@elysiajs/cookie';
 import { container } from '../container';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { CAUSE_VALUES } from '../constants/causes.js';
 
 const userRepository = container.getRepositories().user;
+
+const causeSchema = t.Array(t.String({ pattern: `^(${CAUSE_VALUES.join('|')})$` }));
 
 export const usersRouter = new Elysia({ prefix: '/users', tags: ['users'] })
   .use(cookie())
@@ -33,7 +36,7 @@ export const usersRouter = new Elysia({ prefix: '/users', tags: ['users'] })
                 expertise: t.String(),
               })
             ),
-            causes: t.Array(t.String()),
+            causes: causeSchema,
           })
         ),
       }),
