@@ -13,6 +13,7 @@
     "db:migrate": "bun src/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:cleanup": "bun src/db/cleanup.ts",
+    "admin-seed": "bun scripts/admin-seed.ts",
     "test": "bun test",
     "test:e2e": "bun test tests/e2e",
     "test:setup": "bun test tests/e2e/setup.test.ts",
