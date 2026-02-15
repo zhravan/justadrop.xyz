@@ -19,7 +19,10 @@ export class AuthService {
     await this.otpService.generateAndSendOtp(normalizedEmail);
   }
 
-  async verifyOtpAndLogin(email: string, code: string): Promise<{ token: string; user: AuthUser; isNewUser: boolean }> {
+  async verifyOtpAndLogin(
+    email: string,
+    code: string
+  ): Promise<{ token: string; user: AuthUser; isNewUser: boolean }> {
     const normalizedEmail = email.toLowerCase().trim();
 
     const isValid = await this.otpService.verifyOtp(normalizedEmail, code);
@@ -57,6 +60,7 @@ export class AuthService {
       ...(user.volunteering && { volunteering: user.volunteering }),
       ...(user.phone != null && { phone: user.phone }),
       ...(user.gender != null && { gender: user.gender }),
+      ...(user.isAdmin != null && { isAdmin: user.isAdmin }),
     };
     return { token, user: authUser, isNewUser };
   }
@@ -79,6 +83,7 @@ export class AuthService {
       ...(u.volunteering && { volunteering: u.volunteering }),
       ...(u.phone != null && { phone: u.phone }),
       ...(u.gender != null && { gender: u.gender }),
+      ...(u.isAdmin != null && { isAdmin: u.isAdmin }),
     };
   }
 }
