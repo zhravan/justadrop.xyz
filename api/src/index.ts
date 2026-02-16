@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
-import { healthRouter, authRouter, usersRouter, organizationsRouter, opportunitiesRouter, applicationsRouter, volunteersRouter } from './routes';
+import { healthRouter, authRouter, usersRouter, organizationsRouter, opportunitiesRouter, applicationsRouter, volunteersRouter, storageRouter } from './routes';
 import { errorHandler, responseEnvelope } from './middleware';
 import { runMigrations } from './db/index.js';
 import { logger } from './utils/logger';
@@ -116,6 +116,7 @@ async function startServer() {
           tags: [
             { name: 'health', description: 'Health check endpoints' },
             { name: 'auth', description: 'Authentication endpoints' },
+            { name: 'storage', description: 'File storage (Supabase Storage) endpoints' },
           ],
         },
       })
@@ -130,6 +131,7 @@ async function startServer() {
     .use(opportunitiesRouter)
     .use(applicationsRouter)
     .use(volunteersRouter)
+    .use(storageRouter)
     .listen(3001);
 
   server = app;
