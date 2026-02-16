@@ -19,19 +19,20 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
-    "elysia": "^1.1.0",
-    "@elysiajs/cors": "^1.1.0",
-    "@elysiajs/swagger": "^1.1.0",
-    "@elysiajs/jwt": "^1.1.0",
     "@elysiajs/cookie": "^0.8.0",
-    "resend": "^4.0.0",
+    "@elysiajs/cors": "^1.1.0",
+    "@elysiajs/jwt": "^1.1.0",
+    "@elysiajs/swagger": "^1.1.0",
+    "@infisical/sdk": "^1.0.0",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "@supabase/supabase-js": "^2.95.3",
+    "cookie": "^1.1.1",
+    "drizzle-orm": "^0.38.0",
+    "elysia": "^1.1.0",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
-    "cookie": "^1.1.1",
-    "@paralleldrive/cuid2": "^2.2.2",
-    "drizzle-orm": "^0.38.0",
     "postgres": "^3.4.4",
-    "@infisical/sdk": "^1.0.0"
+    "resend": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
