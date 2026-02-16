@@ -45,20 +45,22 @@ export const errorHandler = new Elysia()
 
     if (code === 'NOT_FOUND') {
       set.status = 404;
-      return errorResponse(error.message || 'Resource not found', 'NOT_FOUND');
+      const msg = error instanceof Error ? error.message : 'Resource not found';
+      return errorResponse(msg || 'Resource not found', 'NOT_FOUND');
     }
 
     // Log unexpected errors
     console.error('Unexpected error:', error);
     
+    const err = error instanceof Error ? error : new Error(String(error));
     set.status = set.status || 500;
     return errorResponse(
-      error?.message || 'Internal server error',
+      err.message || 'Internal server error',
       'INTERNAL_SERVER_ERROR',
       process.env.NODE_ENV === 'development' ? { 
-        stack: error?.stack,
+        stack: err.stack,
         error: String(error),
-        name: error?.name 
+        name: err.name 
       } : undefined
     );
   });

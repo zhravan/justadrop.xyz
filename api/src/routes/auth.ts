@@ -33,6 +33,7 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
       sessionToken.path = '/';
       
       return {
+        token: result.token,
         user: result.user,
         isNewUser: result.isNewUser,
       };
@@ -46,7 +47,7 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   )
   .post('/logout', async ({ cookie }) => {
     const sessionToken = cookie.sessionToken;
-    const token = sessionToken?.value;
+    const token = typeof sessionToken?.value === 'string' ? sessionToken.value : undefined;
     
     if (token) {
       await authController.logout(token);
@@ -61,6 +62,6 @@ export const authRouter = new Elysia({ prefix: '/auth', tags: ['auth'] })
   })
   .get('/me', async ({ cookie }) => {
     const sessionToken = cookie.sessionToken;
-    const token = sessionToken?.value;
+    const token = typeof sessionToken?.value === 'string' ? sessionToken.value : undefined;
     return await authController.getCurrentUser(token);
   });

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getBackendUrl, getBackendErrorHint } from '@/lib/api-proxy';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const API_URL = getBackendUrl();
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('sessionToken')?.value;
@@ -26,8 +28,9 @@ export async function GET() {
     return NextResponse.json(data?.user ?? data);
   } catch (error) {
     console.error('Auth me error:', error);
+    const hint = getBackendErrorHint(error);
     return NextResponse.json(
-      { error: 'Failed to get session' },
+      { error: 'Failed to get session', hint: process.env.NODE_ENV === 'development' ? hint : undefined },
       { status: 500 }
     );
   }

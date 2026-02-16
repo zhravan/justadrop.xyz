@@ -17,7 +17,9 @@ function getConnectionString(): string {
 }
 
 const connectionString = getConnectionString();
-const client = postgres(connectionString);
+const client = postgres(connectionString, {
+  transform: { undefined: null },
+});
 export const db = drizzle(client, { schema });
 
 export * from './schema';

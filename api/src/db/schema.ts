@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, pgEnum, jsonb, index, integer, check, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, pgEnum, jsonb, index, integer, check, unique, real } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -185,6 +185,8 @@ export const opportunities = pgTable('opportunities', {
   stipendInfo: jsonb('stipend_info').$type<{ amount?: number; duration?: string }>(),
   isCertificateOffered: boolean('is_certificate_offered').notNull().default(false),
   bannerImage: text('banner_image'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

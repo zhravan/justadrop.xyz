@@ -13,7 +13,8 @@ export const usersRouter = new Elysia({ prefix: '/users', tags: ['users'] })
   .use(authMiddleware)
   .patch(
     '/me',
-    async ({ userId, body }) => {
+    async (ctx: any) => {
+      const { userId, body } = ctx;
       const user = await userRepository.updateUser(userId, {
         name: body.name,
         phone: body.phone,

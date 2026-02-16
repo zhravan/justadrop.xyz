@@ -69,6 +69,7 @@ export default function CreateOrganisationPage() {
     setSubmitting(true);
     try {
       const res = await fetch('/api/organizations', {
+        credentials: 'include',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',

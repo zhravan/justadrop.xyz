@@ -13,7 +13,8 @@ export const organizationsRouter = new Elysia({ prefix: '/organizations', tags: 
   .use(authMiddleware)
   .post(
     '/',
-    async ({ userId, body }) => {
+    async (ctx: any) => {
+      const { userId, body } = ctx;
       const org = await organizationRepository.create({
         createdBy: userId,
         orgName: body.orgName,
@@ -48,7 +49,8 @@ export const organizationsRouter = new Elysia({ prefix: '/organizations', tags: 
       }),
     }
   )
-  .get('/me', async ({ userId }) => {
-    const orgs = await organizationRepository.findByCreatedBy(userId);
+  .get('/me', async (ctx: any) => {
+    const { userId } = ctx;
+    const orgs = await organizationRepository.findByUserId(userId);
     return { organizations: orgs };
   });
