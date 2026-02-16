@@ -1,23 +1,20 @@
 import { Elysia } from 'elysia';
 import { cookie } from '@elysiajs/cookie';
-import { UnauthorizedError } from '../utils/errors';
 import { container } from '../container';
 
 const sessionService = container.getServices().session;
 
-export const authMiddleware = new Elysia({ name: 'auth' })
+export const optionalAuthMiddleware = new Elysia({ name: 'optional-auth' })
   .use(cookie())
   .derive(async ({ cookie: { sessionToken } }) => {
     const token = typeof sessionToken?.value === 'string' ? sessionToken.value : undefined;
     if (!token) {
-      throw new UnauthorizedError('Authentication required');
+      return { user: null as any, userId: null as string | null };
     }
-
     const session = await sessionService.validateSession(token);
     if (!session) {
-      throw new UnauthorizedError('Invalid or expired session');
+      return { user: null as any, userId: null as string | null };
     }
-
     return {
       user: session.user,
       userId: session.userId,

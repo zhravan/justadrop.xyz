@@ -2,6 +2,10 @@ import { OtpRepository } from './repositories/otp.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { UserRepository } from './repositories/user.repository';
 import { OrganizationRepository } from './repositories/organization.repository';
+import { OpportunityRepository } from './repositories/opportunity.repository';
+import { ApplicationRepository } from './repositories/application.repository';
+import { VolunteerRepository } from './repositories/volunteer.repository';
+import { FeedbackRepository } from './repositories/feedback.repository';
 import { EmailService } from './services/email.service';
 import { OtpService } from './services/otp.service';
 import { SessionService } from './services/session.service';
@@ -14,6 +18,10 @@ class Container {
     session: SessionRepository;
     user: UserRepository;
     organization: OrganizationRepository;
+    opportunity: OpportunityRepository;
+    application: ApplicationRepository;
+    volunteer: VolunteerRepository;
+    feedback: FeedbackRepository;
   } | null = null;
 
   private _services: {
@@ -34,6 +42,10 @@ class Container {
         session: new SessionRepository(),
         user: new UserRepository(),
         organization: new OrganizationRepository(),
+        opportunity: new OpportunityRepository(),
+        application: new ApplicationRepository(),
+        volunteer: new VolunteerRepository(),
+        feedback: new FeedbackRepository(),
       };
     }
     return this._repositories;
