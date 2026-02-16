@@ -62,7 +62,8 @@ export const documentTypeEnum = pgEnum('document_type', [
   'registration_certificate',
   '80G_certificate',
   '12A_certificate',
-  'PAN'
+  'PAN',
+  'proof_of_address',
 ]);
 
 export const causeEnum = pgEnum('cause', [

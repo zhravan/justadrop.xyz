@@ -1,0 +1,1 @@
+ALTER TYPE "public"."document_type" ADD VALUE 'proof_of_address';
