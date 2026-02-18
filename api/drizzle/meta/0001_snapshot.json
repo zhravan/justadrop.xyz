@@ -1,5 +1,5 @@
 {
-  "id": "19157b75-7ee4-4fde-86da-5fb63506bb65",
+  "id": "392c47c4-9c1c-44d5-bb3e-631715a39972",
   "prevId": "22736dc5-9b39-4d78-9df5-6f2c4c5e725b",
   "version": "7",
   "dialect": "postgresql",
@@ -547,6 +547,18 @@
         "banner_image": {
           "name": "banner_image",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "real",
           "primaryKey": false,
           "notNull": false
         },
@@ -1957,6 +1969,13 @@
           "notNull": true,
           "default": false
         },
+        "is_admin": {
+          "name": "is_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -2016,6 +2035,21 @@
           "columns": [
             {
               "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_is_admin_idx": {
+          "name": "users_is_admin_idx",
+          "columns": [
+            {
+              "expression": "is_admin",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
