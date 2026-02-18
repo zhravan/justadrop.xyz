@@ -32,7 +32,7 @@ export const authClient = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.toLowerCase().trim() }),
-      credentials: 'same-origin',
+      credentials: 'include',
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -49,7 +49,7 @@ export const authClient = {
         email: email.toLowerCase().trim(),
         code: code.trim(),
       }),
-      credentials: 'same-origin',
+      credentials: 'include',
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -60,7 +60,7 @@ export const authClient = {
 
   async getSession(): Promise<AuthUser | null> {
     const res = await fetch(`${API_BASE}/me`, {
-      credentials: 'same-origin',
+      credentials: 'include',
     });
     if (res.status === 401) return null;
     const data = await res.json().catch(() => null);
@@ -71,7 +71,7 @@ export const authClient = {
   async logout(): Promise<void> {
     await fetch(`${API_BASE}/logout`, {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: 'include',
     });
   },
 };

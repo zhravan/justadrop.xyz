@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -11,16 +11,19 @@ import {
   LogOut,
   X,
   Compass,
+  ChevronDown,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
+import { useNgo } from '@/contexts/NgoContext';
 import { useClickOutside } from '@/hooks';
 import { cn } from '@/lib/common';
 
 const sidebarLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/opportunities', label: 'Opportunities', icon: Heart },
+  { href: '/volunteers', label: 'Volunteers', icon: Users },
   { href: '/onboarding', label: 'Onboarding', icon: Compass },
-  { href: '/organisations/create', label: 'Create NGO', icon: Building2 },
   { href: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
@@ -33,7 +36,10 @@ interface AppSidebarProps {
 export function AppSidebar({ open, onClose, isMobile }: AppSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { organizations, selectedOrgId, setSelectedOrgId, selectedOrg } = useNgo();
+  const [ngoDropdownOpen, setNgoDropdownOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+  const ngoDropdownRef = useRef<HTMLDivElement>(null);
   useClickOutside(sidebarRef, isMobile && open, onClose);
 
   return (
@@ -80,8 +86,84 @@ export function AppSidebar({ open, onClose, isMobile }: AppSidebarProps) {
           )}
         </div>
 
+        {/* NGO selector */}
+        {organizations.length > 0 && (
+          <div className="border-b border-foreground/5 px-3 py-2">
+            <p className="mb-1.5 text-xs font-medium text-foreground/60">My NGOs</p>
+            <div className="relative" ref={ngoDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setNgoDropdownOpen(!ngoDropdownOpen)}
+                className="flex w-full items-center justify-between rounded-xl border border-foreground/10 bg-muted/30 px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
+              >
+                <span className="truncate">
+                  {selectedOrg?.orgName ?? 'Select NGO'}
+                </span>
+                <ChevronDown
+                  className={cn('h-4 w-4 shrink-0 transition-transform', ngoDropdownOpen && 'rotate-180')}
+                />
+              </button>
+              {ngoDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-auto rounded-xl border border-foreground/10 bg-white py-1 shadow-lg">
+                  {organizations.map((org) => (
+                    <Link
+                      key={org.id}
+                      href={`/organisations/${org.id}/opportunities`}
+                      onClick={() => {
+                        setSelectedOrgId(org.id);
+                        setNgoDropdownOpen(false);
+                        if (isMobile) onClose();
+                      }}
+                      className={cn(
+                        'block px-3 py-2 text-sm',
+                        selectedOrgId === org.id
+                          ? 'bg-jad-mint font-medium text-jad-foreground'
+                          : 'text-foreground hover:bg-muted/50'
+                      )}
+                    >
+                      {org.orgName}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/organisations"
+                    onClick={() => setNgoDropdownOpen(false)}
+                    className="block border-t border-foreground/10 px-3 py-2 text-sm text-jad-primary hover:bg-jad-mint/30"
+                  >
+                    Manage NGOs
+                  </Link>
+                </div>
+              )}
+            </div>
+            {selectedOrgId && (
+              <Link
+                href={`/organisations/${selectedOrgId}/opportunities/create`}
+                onClick={isMobile ? onClose : undefined}
+                className="mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-jad-primary hover:bg-jad-mint/30"
+              >
+                <Building2 className="h-4 w-4" />
+                Create opportunity
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Nav links */}
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+          {organizations.length === 0 && (
+            <Link
+              href="/organisations/create"
+              onClick={isMobile ? onClose : undefined}
+              className={cn(
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium',
+                pathname === '/organisations/create'
+                  ? 'bg-jad-mint text-jad-foreground'
+                  : 'text-foreground/70 hover:bg-jad-mint/50'
+              )}
+            >
+              <Building2 className="h-5 w-5 shrink-0" />
+              Create NGO
+            </Link>
+          )}
           {sidebarLinks.map(({ href, label, icon: Icon }) => {
             const isActive =
               pathname === href ||

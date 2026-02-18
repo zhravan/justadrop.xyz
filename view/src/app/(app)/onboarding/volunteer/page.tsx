@@ -56,6 +56,7 @@ export default function VolunteerOnboardingPage() {
     setSubmitting(true);
     try {
       const res = await fetch('/api/users/me', {
+        credentials: 'include',
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',

@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
-import { healthRouter, authRouter, usersRouter, organizationsRouter } from './routes';
+import { healthRouter, authRouter, usersRouter, organizationsRouter, opportunitiesRouter, applicationsRouter, volunteersRouter } from './routes';
 import { errorHandler, responseEnvelope } from './middleware';
 import { runMigrations } from './db/index.js';
 import { logger } from './utils/logger';
@@ -132,6 +132,9 @@ async function startServer() {
     .use(usersRouter)
     .use(moderatorRouter)
     .use(organizationsRouter)
+    .use(opportunitiesRouter)
+    .use(applicationsRouter)
+    .use(volunteersRouter)
     .listen(3001);
 
   server = app;

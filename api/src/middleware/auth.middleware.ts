@@ -8,7 +8,7 @@ const sessionService = container.getServices().session;
 export const authMiddleware = new Elysia({ name: 'auth' })
   .use(cookie())
   .derive(async ({ cookie: { sessionToken } }) => {
-    const token = sessionToken?.value;
+    const token = typeof sessionToken?.value === 'string' ? sessionToken.value : undefined;
     if (!token) {
       throw new UnauthorizedError('Authentication required');
     }

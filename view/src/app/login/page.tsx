@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { Suspense, useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, ArrowLeft, Loader2, KeyRound } from 'lucide-react';
@@ -15,7 +15,7 @@ import { FormField, FormInput } from '@/components/ui/form';
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = useMemo(() => {
@@ -290,5 +290,25 @@ export default function LoginPage() {
       </main>
       <ViewFooter />
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <ViewHeader />
+      <main className="flex-1 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-jad-primary" />
+      </main>
+      <ViewFooter />
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
