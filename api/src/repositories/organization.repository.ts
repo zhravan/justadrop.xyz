@@ -1,5 +1,11 @@
 import { db } from '../db/index.js';
-import { organizations, organizationMembers, organizationDocuments } from '../db/schema.js';
+import {
+  organizations,
+  organizationMembers,
+  organizationDocuments,
+  documentTypeEnum,
+} from '../db/schema.js';
+import { withTransaction } from '../utils/transaction.js';
 import { eq, inArray, and } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -43,7 +49,7 @@ export class OrganizationRepository {
     documents?: Array<{ documentType: string; documentAssetUrl: string; format: string }>;
   }): Promise<Organization> {
     const id = createId();
-    await db.transaction(async (tx) => {
+    await withTransaction(async (tx) => {
       await tx.insert(organizations).values({
         id,
         createdBy: data.createdBy,
