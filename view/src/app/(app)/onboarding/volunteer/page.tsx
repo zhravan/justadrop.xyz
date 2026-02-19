@@ -1,78 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Heart, Loader2, User, Sparkles } from 'lucide-react';
+import { ArrowLeft, Heart, User, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
-import { useQueryClient } from '@tanstack/react-query';
 import { VOLUNTEER_CAUSES, VOLUNTEER_SKILLS } from '@/lib/constants';
-import { toast } from 'sonner';
 import { FormPageSkeleton } from '@/components/skeletons';
 import { FormField, FormInput, FormSection, ChipGroup, FormActions } from '@/components/ui/form';
+import { useVolunteerOnboarding } from '@/hooks';
 
 export default function VolunteerOnboardingPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { user, isAuthenticated, isLoading, isReady } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    causes: [] as string[],
-    skills: [] as string[],
-  });
-
-  useEffect(() => {
-    if (user) {
-      setForm((f) => ({
-        ...f,
-        name: user.name ?? '',
-        causes: user.volunteering?.causes ?? [],
-        skills: (user.volunteering?.skills ?? []).map((s) => s.name),
-      }));
-    }
-  }, [user]);
-
-  const toggleCause = (value: string) =>
-    setForm((f) => ({
-      ...f,
-      causes: f.causes.includes(value) ? f.causes.filter((x) => x !== value) : [...f.causes, value],
-    }));
-
-  const toggleSkill = (skill: string) =>
-    setForm((f) => ({
-      ...f,
-      skills: f.skills.includes(skill) ? f.skills.filter((x) => x !== skill) : [...f.skills, skill],
-    }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await fetch('/api/users/me', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          volunteering: {
-            isInterest: true,
-            skills: form.skills.map((name) => ({ name, expertise: 'intermediate' })),
-            causes: form.causes,
-          },
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Failed to save');
-      toast.success('Volunteer profile saved');
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
-      router.push('/opportunities');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save profile');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const { isAuthenticated, isLoading, isReady } = useAuth();
+  const { form, submitting, toggleCause, toggleSkill, handleSubmit } = useVolunteerOnboarding();
 
   if (!isReady || isLoading || !user) {
     return <FormPageSkeleton />;
@@ -149,7 +89,7 @@ export default function VolunteerOnboardingPage() {
           secondaryLabel="Skip for now — go to dashboard"
           secondaryHref="/dashboard"
           loading={submitting}
-          disabled={!form.name}
+          disabled={!form.name.trim()}
         />
       </form>
     </div>

@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import {
   Menu,
   X,
@@ -15,9 +13,7 @@ import {
   ChevronDown,
   Building2,
 } from 'lucide-react';
-import { useClickOutside } from '@/hooks';
-import { useAuth } from '@/lib/auth/use-auth';
-import { useNgo } from '@/contexts/NgoContext';
+import { useAppHeader } from '@/hooks';
 import { cn } from '@/lib/common';
 
 const navLinks = [
@@ -28,20 +24,26 @@ const navLinks = [
 ];
 
 export function AppHeader() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [ngoDropdownOpen, setNgoDropdownOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const ngoDropdownRef = useRef<HTMLDivElement>(null);
-  const closeMenu = useCallback(() => setMobileMenuOpen(false), []);
-  const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
-  useClickOutside(menuRef, mobileMenuOpen, closeMenu);
-  useClickOutside(userMenuRef, userMenuOpen, closeUserMenu);
-  useClickOutside(ngoDropdownRef, ngoDropdownOpen, () => setNgoDropdownOpen(false));
-  const { user, logout } = useAuth();
-  const { organizations, selectedOrgId, setSelectedOrgId, selectedOrg } = useNgo();
-  const pathname = usePathname();
+  const {
+    mobileMenuOpen,
+    userMenuOpen,
+    ngoDropdownOpen,
+    menuRef,
+    userMenuRef,
+    ngoDropdownRef,
+    pathname,
+    user,
+    logout,
+    organizations,
+    selectedOrgId,
+    setSelectedOrgId,
+    selectedOrg,
+    closeMenu,
+    closeUserMenu,
+    toggleMobileMenu,
+    toggleUserMenu,
+    toggleNgoDropdown,
+  } = useAppHeader();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-foreground/5 bg-white/80 backdrop-blur-xl">
@@ -82,7 +84,7 @@ export function AppHeader() {
             <div ref={ngoDropdownRef} className="relative ml-2">
               <button
                 type="button"
-                onClick={() => setNgoDropdownOpen(!ngoDropdownOpen)}
+                onClick={toggleNgoDropdown}
                 className="flex items-center gap-2 rounded-full border border-foreground/10 bg-muted/30 px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
               >
                 <Building2 className="h-4 w-4 text-jad-primary" />
@@ -99,7 +101,7 @@ export function AppHeader() {
                       href={`/organisations/${org.id}/opportunities`}
                       onClick={() => {
                         setSelectedOrgId(org.id);
-                        setNgoDropdownOpen(false);
+                        toggleNgoDropdown();
                       }}
                       className={cn(
                         'block px-4 py-2.5 text-sm',
@@ -113,7 +115,7 @@ export function AppHeader() {
                   ))}
                   <Link
                     href="/organisations"
-                    onClick={() => setNgoDropdownOpen(false)}
+                    onClick={toggleNgoDropdown}
                     className="block border-t border-foreground/10 px-4 py-2.5 text-sm text-jad-primary hover:bg-jad-mint/30"
                   >
                     Manage NGOs
@@ -121,7 +123,7 @@ export function AppHeader() {
                   {selectedOrgId && (
                     <Link
                       href={`/organisations/${selectedOrgId}/opportunities/create`}
-                      onClick={() => setNgoDropdownOpen(false)}
+                      onClick={toggleNgoDropdown}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-jad-primary hover:bg-jad-mint/30"
                     >
                       <Heart className="h-4 w-4" />
@@ -137,7 +139,7 @@ export function AppHeader() {
           <div ref={userMenuRef} className="relative ml-2">
             <button
               type="button"
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              onClick={toggleUserMenu}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-jad-primary/20 bg-jad-mint/50 text-jad-foreground transition-all hover:bg-jad-mint"
               aria-label="Profile menu"
             >
@@ -153,7 +155,7 @@ export function AppHeader() {
                 </div>
                 <Link
                   href="/profile"
-                  onClick={() => setUserMenuOpen(false)}
+                  onClick={closeUserMenu}
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-jad-mint/60"
                 >
                   <UserCircle className="h-4 w-4" />
@@ -163,7 +165,7 @@ export function AppHeader() {
                   type="button"
                   onClick={() => {
                     logout();
-                    setUserMenuOpen(false);
+                    closeUserMenu();
                   }}
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-foreground hover:bg-red-50 hover:text-red-600"
                 >
@@ -179,7 +181,7 @@ export function AppHeader() {
         <div ref={menuRef} className="relative md:hidden">
           <button
             type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={toggleMobileMenu}
             className="flex h-10 w-10 items-center justify-center rounded-full text-jad-foreground transition-colors hover:bg-jad-mint/60"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}

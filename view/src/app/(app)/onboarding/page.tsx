@@ -1,29 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { OnboardingSkeleton } from '@/components/skeletons';
 import { Heart, Building2, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
-
-const ONBOARDING_COMPLETE_KEY = 'juztadrop_onboarding_complete';
+import { useOnboarding } from '@/hooks';
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { user, isAuthenticated, isLoading, isReady } = useAuth();
-
-  useEffect(() => {
-    if (isReady && !isAuthenticated) {
-      router.replace('/login?redirect=/onboarding');
-    }
-  }, [isReady, isAuthenticated, router]);
-
-  const markCompleteAndGo = (path: string) => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-    }
-    router.push(path);
-  };
+  const { user, isLoading, isReady } = useAuth();
+  const { markCompleteAndGo } = useOnboarding();
 
   if (!isReady || isLoading || !user) {
     return <OnboardingSkeleton />;

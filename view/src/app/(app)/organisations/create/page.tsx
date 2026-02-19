@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Building2,
-  Loader2,
   Upload,
   FileText,
   MapPin,
@@ -16,11 +14,9 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
-import { useNgo } from '@/contexts/NgoContext';
 import { LOCATIONS, VOLUNTEER_CAUSES } from '@/lib/constants';
 import { cn } from '@/lib/common';
 import { FormPageSkeleton } from '@/components/skeletons';
-import { toast } from 'sonner';
 import {
   FormField,
   FormInput,
@@ -30,118 +26,15 @@ import {
   ChipGroup,
   FormActions,
 } from '@/components/ui/form';
-import { uploadToStorage } from '@/lib/storage';
+import { useCreateOrganization } from '@/hooks';
 
 const ORG_TYPES = ['NGO', 'NPO', 'Trust', 'Foundation', 'Society'] as const;
 
 export default function CreateOrganisationPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, isReady } = useAuth();
-  const { refetchOrgs } = useNgo();
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    orgName: '',
-    type: '',
-    registrationNumber: '',
-    address: '',
-    city: '',
-    state: '',
-    contactPersonName: '',
-    contactPersonEmail: '',
-    contactPersonNumber: '',
-    description: '',
-    website: '',
-    causes: [] as string[],
-    registrationDoc: null as File | null,
-    proofDoc: null as File | null,
-  });
-
-  const toggleCause = (value: string) =>
-    setForm((f) => ({
-      ...f,
-      causes: f.causes.includes(value) ? f.causes.filter((x) => x !== value) : [...f.causes, value],
-    }));
-
-  const MAX_FILE_SIZE = 1024 * 1024; // 1 MB
-
-  const handleFileChange =
-    (field: 'registrationDoc' | 'proofDoc') => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        if (file.size > MAX_FILE_SIZE) {
-          toast.error(
-            `File must be under 1 MB. ${file.name} is ${(file.size / 1024).toFixed(0)} KB.`
-          );
-          e.target.value = '';
-          return;
-        }
-        setForm((f) => ({ ...f, [field]: file }));
-      }
-    };
-
-  const getFormatFromFile = (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (ext === 'pdf') return 'pdf';
-    if (['jpg', 'jpeg'].includes(ext)) return ext;
-    if (ext === 'png') return 'png';
-    return ext || 'bin';
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const documents: Array<{ documentType: string; documentAssetUrl: string; format: string }> =
-        [];
-
-      if (form.registrationDoc) {
-        const { assetKey } = await uploadToStorage(form.registrationDoc, 'documents');
-        documents.push({
-          documentType: 'registration_certificate',
-          documentAssetUrl: assetKey,
-          format: getFormatFromFile(form.registrationDoc),
-        });
-      }
-      if (form.proofDoc) {
-        const { assetKey } = await uploadToStorage(form.proofDoc, 'documents');
-        documents.push({
-          documentType: 'proof_of_address',
-          documentAssetUrl: assetKey,
-          format: getFormatFromFile(form.proofDoc),
-        });
-      }
-
-      const res = await fetch('/api/organizations', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orgName: form.orgName,
-          description: form.description || undefined,
-          causes: form.causes,
-          website: form.website || undefined,
-          registrationNumber: form.registrationNumber || undefined,
-          contactPersonName: form.contactPersonName,
-          contactPersonEmail: form.contactPersonEmail,
-          contactPersonNumber: form.contactPersonNumber || undefined,
-          address: form.address || undefined,
-          city: form.city || undefined,
-          state: form.state || undefined,
-          country: 'India',
-          ...(documents.length > 0 && { documents }),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create organization');
-      toast.success('Organization created successfully');
-      await refetchOrgs();
-      router.push('/dashboard');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create organization');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const { form, submitting, toggleCause, handleFileChange, handleSubmit, setForm } =
+    useCreateOrganization();
 
   if (!isReady || isLoading || !user) {
     return <FormPageSkeleton />;
