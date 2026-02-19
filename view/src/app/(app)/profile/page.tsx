@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Phone, Mail, Heart, Sparkles, Check, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
@@ -11,13 +12,14 @@ import {
 } from '@/lib/constants';
 import { cn } from '@/lib/common';
 import { FormPageSkeleton } from '@/components/skeletons';
-import { FormField, FormInput, FormSection, ChipGroup } from '@/components/ui/form';
+import { FormField, FormInput, FormSection, ChipGroup, StepperWizard } from '@/components/ui/form';
+import type { WizardStep } from '@/components/ui/form';
 import { useProfileForm } from '@/hooks';
 
 function SaveIndicator({ status }: { status: string }) {
   if (status === 'saving') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-foreground/50 animate-in fade-in">
+      <span className="inline-flex items-center gap-1.5 text-xs text-foreground/50">
         <Loader2 className="h-3 w-3 animate-spin" />
         Saving…
       </span>
@@ -25,7 +27,7 @@ function SaveIndicator({ status }: { status: string }) {
   }
   if (status === 'saved') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-jad-primary animate-in fade-in">
+      <span className="inline-flex items-center gap-1.5 text-xs text-jad-primary">
         <Check className="h-3 w-3" />
         Saved
       </span>
@@ -39,6 +41,7 @@ export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, isReady } = useAuth();
   const { form, saveStatus, updateField, setGender, toggleCause, toggleSkill, setSkillExpertise } =
     useProfileForm();
+  const [activeStep, setActiveStep] = useState('account');
 
   if (!isReady || isLoading || !user) {
     return <FormPageSkeleton />;
@@ -49,24 +52,13 @@ export default function ProfilePage() {
     return null;
   }
 
-  return (
-    <div className="container max-w-2xl">
-      <div className="flex items-center gap-4 mb-10">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-jad-mint text-jad-primary shadow-lg shadow-jad-primary/10">
-          <User className="h-7 w-7" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-jad-foreground sm:text-3xl">Your profile</h1>
-            <SaveIndicator status={saveStatus} />
-          </div>
-          <p className="mt-1 text-sm text-foreground/70">
-            Manage your personal details and volunteering preferences. Changes save automatically.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-8">
+  const steps: WizardStep[] = [
+    {
+      id: 'account',
+      label: 'Account',
+      icon: <Mail className="h-5 w-5" />,
+      isComplete: true,
+      content: (
         <FormSection
           title="Account"
           description="Your sign-in email cannot be changed"
@@ -81,7 +73,14 @@ export default function ProfilePage() {
             />
           </FormField>
         </FormSection>
-
+      ),
+    },
+    {
+      id: 'personal',
+      label: 'Personal',
+      icon: <User className="h-5 w-5" />,
+      isComplete: !!form.name,
+      content: (
         <FormSection
           title="Personal details"
           description="How we address you and reach you"
@@ -114,7 +113,14 @@ export default function ProfilePage() {
             />
           </FormField>
         </FormSection>
-
+      ),
+    },
+    {
+      id: 'causes',
+      label: 'Causes',
+      icon: <Heart className="h-5 w-5" />,
+      isComplete: form.causes.length > 0,
+      content: (
         <FormSection
           title="Causes you care about"
           description="Select causes that resonate with you"
@@ -122,7 +128,14 @@ export default function ProfilePage() {
         >
           <ChipGroup options={VOLUNTEER_CAUSES} selected={form.causes} onChange={toggleCause} />
         </FormSection>
-
+      ),
+    },
+    {
+      id: 'skills',
+      label: 'Skills',
+      icon: <Sparkles className="h-5 w-5" />,
+      isComplete: form.skills.length > 0,
+      content: (
         <FormSection
           title="Skills & expertise"
           description="Add skills and set your proficiency level"
@@ -171,7 +184,30 @@ export default function ProfilePage() {
             )}
           </div>
         </FormSection>
+      ),
+    },
+  ];
+
+  return (
+    <div className="container max-w-2xl">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-jad-mint text-jad-primary shadow-lg shadow-jad-primary/10">
+          <User className="h-7 w-7" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-jad-foreground sm:text-3xl">Your profile</h1>
+          <p className="mt-1 text-sm text-foreground/70">
+            Manage your personal details and volunteering preferences.
+          </p>
+        </div>
       </div>
+
+      <StepperWizard
+        steps={steps}
+        activeStep={activeStep}
+        onStepChange={setActiveStep}
+        headerExtra={<SaveIndicator status={saveStatus} />}
+      />
     </div>
   );
 }

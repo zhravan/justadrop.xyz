@@ -12,3 +12,5 @@ export { ChipGroup } from './ChipGroup';
 export type { ChipGroupProps, ChipOption } from './ChipGroup';
 export { FormActions } from './FormActions';
 export type { FormActionsProps } from './FormActions';
+export { StepperWizard } from './StepperWizard';
+export type { WizardStep, StepperWizardProps } from './StepperWizard';
