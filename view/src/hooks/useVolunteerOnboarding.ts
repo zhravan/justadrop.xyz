@@ -78,5 +78,6 @@ export function useVolunteerOnboarding() {
     toggleCause,
     toggleSkill,
     handleSubmit,
+    setForm,
   };
 }

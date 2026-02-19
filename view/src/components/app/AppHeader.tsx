@@ -15,15 +15,30 @@ import {
 } from 'lucide-react';
 import { useAppHeader } from '@/hooks';
 import { cn } from '@/lib/common';
+import type { LucideIcon } from 'lucide-react';
 
-const navLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  isModal?: boolean;
+}
+
+const navLinks: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/opportunities', label: 'Opportunities', icon: Heart },
   { href: '/volunteers', label: 'Volunteers', icon: Users },
-  { href: '/onboarding', label: 'Onboarding', icon: Compass },
+  { href: '/onboarding', label: 'Onboarding', icon: Compass, isModal: true },
 ];
 
-export function AppHeader() {
+interface AppHeaderProps {
+  onboardingModal: {
+    setIsOpen: (open: boolean) => void;
+    openModal: () => void;
+  };
+}
+
+export function AppHeader({ onboardingModal }: AppHeaderProps) {
   const {
     mobileMenuOpen,
     userMenuOpen,
@@ -44,6 +59,7 @@ export function AppHeader() {
     toggleUserMenu,
     toggleNgoDropdown,
   } = useAppHeader();
+  const { openModal } = onboardingModal;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-foreground/5 bg-white/80 backdrop-blur-xl">
@@ -63,6 +79,25 @@ export function AppHeader() {
             const isActive =
               pathname === link.href ||
               (link.href !== '/dashboard' && pathname.startsWith(link.href));
+
+            if (link.isModal) {
+              return (
+                <button
+                  key={link.href}
+                  type="button"
+                  onClick={openModal}
+                  className={cn(
+                    'rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-jad-mint/60 hover:text-jad-foreground',
+                    isActive
+                      ? 'bg-jad-mint/60 text-jad-foreground font-semibold'
+                      : 'text-foreground/80'
+                  )}
+                >
+                  {link.label}
+                </button>
+              );
+            }
+
             return (
               <Link
                 key={link.href}
@@ -198,6 +233,28 @@ export function AppHeader() {
                 const isActive =
                   pathname === link.href ||
                   (link.href !== '/dashboard' && pathname.startsWith(link.href));
+
+                if (link.isModal) {
+                  return (
+                    <button
+                      key={link.href}
+                      type="button"
+                      onClick={() => {
+                        openModal();
+                        closeMenu();
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-5 py-3 text-sm font-medium transition-colors hover:bg-jad-mint/60 hover:text-jad-foreground',
+                        isActive && 'bg-jad-mint/60 text-jad-foreground font-semibold'
+                      )}
+                      role="menuitem"
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {link.label}
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={link.href}

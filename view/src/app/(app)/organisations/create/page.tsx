@@ -1,18 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Building2,
-  Upload,
-  FileText,
-  MapPin,
-  Mail,
-  User,
-  Globe,
-  FileCheck,
-} from 'lucide-react';
+import { Building2, Upload, FileText, MapPin, Mail, User, Globe, FileCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth/use-auth';
 import { LOCATIONS, VOLUNTEER_CAUSES } from '@/lib/constants';
 import { cn } from '@/lib/common';
@@ -47,14 +36,6 @@ export default function CreateOrganisationPage() {
 
   return (
     <div className="container max-w-2xl">
-      <Link
-        href="/onboarding"
-        className="inline-flex items-center gap-2 text-sm font-medium text-foreground/70 hover:text-jad-primary transition-colors mb-8"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back
-      </Link>
-
       <div className="flex items-center gap-4 mb-10">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-jad-mint text-jad-primary shadow-lg shadow-jad-primary/10">
           <Building2 className="h-7 w-7" />

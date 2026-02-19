@@ -107,7 +107,11 @@ function LoginPageContent() {
       const { isNewUser } = await authClient.verifyOtp(email, code);
       await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
       if (isNewUser) {
-        router.replace('/onboarding');
+        // Set flag to show onboarding modal
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('juztadrop_show_onboarding', 'true');
+        }
+        router.replace(redirectTo || '/dashboard');
       } else {
         router.replace(redirectTo);
       }
@@ -274,9 +278,7 @@ function LoginPageContent() {
                     disabled={loading || resendCooldown > 0}
                     className="text-sm font-medium text-jad-primary hover:text-jad-dark hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {resendCooldown > 0
-                      ? `Resend in ${resendCooldown}s`
-                      : 'Resend code'}
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
                   </button>
                 </div>
               </form>
