@@ -103,27 +103,33 @@ export default function OpportunitiesPage() {
 
   return (
     <div className="container">
-      {/* Header + filter toggle */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-jad-foreground sm:text-3xl">
-            Opportunities
-          </h1>
-          <p className="mt-1 text-foreground/70">
-            {isLoading
-              ? 'Loading opportunities…'
-              : `${total} opportunity${total !== 1 ? 'ies' : ''} available`}
-          </p>
-        </div>
+      {/* Hero header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-jad-foreground sm:text-4xl">
+          {isLoading ? (
+            'Opportunities'
+          ) : (
+            <>
+              <span className="text-jad-primary">{total}</span>{' '}
+              {total === 1 ? 'opportunity' : 'opportunities'}, waiting for you
+            </>
+          )}
+        </h1>
+        <p className="mx-auto mt-2 max-w-lg text-foreground/60">
+          Find volunteering opportunities that match your interests. Filter by location, mode, or
+          cause.
+        </p>
+      </div>
 
+      <div className="mb-6 flex items-center">
         <button
           type="button"
           onClick={() => setFiltersOpen((v) => !v)}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
+            'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all',
             filtersOpen || activeFilterCount > 0
               ? 'border-jad-primary/30 bg-jad-mint/40 text-jad-primary'
-              : 'border-foreground/20 bg-white text-foreground/80 hover:border-jad-primary/30 hover:bg-jad-mint/20'
+              : 'border-foreground/15 bg-white/80 text-foreground/70 hover:border-jad-primary/30 hover:bg-jad-mint/20'
           )}
         >
           <SlidersHorizontal className="h-4 w-4" />
@@ -134,7 +140,7 @@ export default function OpportunitiesPage() {
             </span>
           )}
           <ChevronDown
-            className={cn('h-4 w-4 transition-transform', filtersOpen && 'rotate-180')}
+            className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')}
           />
         </button>
       </div>

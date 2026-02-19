@@ -77,7 +77,7 @@ export default function VolunteersPage() {
   return (
     <div className="container">
       {/* Hero header */}
-      <div className="mb-10 text-center">
+      <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-jad-foreground sm:text-4xl">
           {isLoading ? (
             'Volunteers'
@@ -92,12 +92,14 @@ export default function VolunteersPage() {
           People making a difference in their communities. Filter by cause or skill to find
           volunteers.
         </p>
+      </div>
 
+      <div className="mb-6 flex items-center">
         <button
           type="button"
           onClick={() => setFiltersOpen((v) => !v)}
           className={cn(
-            'mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all',
+            'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all',
             filtersOpen || activeFilterCount > 0
               ? 'border-jad-primary/30 bg-jad-mint/40 text-jad-primary'
               : 'border-foreground/15 bg-white/80 text-foreground/70 hover:border-jad-primary/30 hover:bg-jad-mint/20'
