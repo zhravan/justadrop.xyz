@@ -1,0 +1,226 @@
+name: Auto Rebase Dev
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check if dev branch exists
+        id: check-dev
+        run: |
+          if git ls-remote --heads origin dev | grep -q dev; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Dev branch exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Dev branch does not exist"
+          fi
+
+      - name: Fetch latest changes
+        if: steps.check-dev.outputs.exists == 'true'
+        run: |
+          git fetch origin main
+          git fetch origin dev
+
+      - name: Check if rebase is needed
+        if: steps.check-dev.outputs.exists == 'true'
+        id: check-rebase
+        run: |
+          # Get the commit hashes
+          main_commit=$(git rev-parse origin/main)
+          dev_commit=$(git rev-parse origin/dev)
+
+          # Check if dev is already up to date with main
+          merge_base=$(git merge-base origin/main origin/dev)
+
+          if [ "$merge_base" = "$main_commit" ]; then
+            echo "needed=false" >> $GITHUB_OUTPUT
+            echo "Dev branch is already up to date with main"
+          else
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "Dev branch needs to be rebased with main"
+            echo "main commit: $main_commit"
+            echo "Dev commit: $dev_commit"
+            echo "Merge base: $merge_base"
+          fi
+
+      - name: Checkout dev branch
+        if: steps.check-dev.outputs.exists == 'true' && steps.check-rebase.outputs.needed == 'true'
+        run: |
+          git checkout dev
+          git reset --hard origin/dev
+
+      - name: Attempt rebase
+        if: steps.check-dev.outputs.exists == 'true' && steps.check-rebase.outputs.needed == 'true'
+        id: rebase
+        run: |
+          echo "Starting rebase of dev with main..."
+
+          # Attempt the rebase
+          if git rebase origin/main; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "Rebase completed successfully"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "Rebase failed due to conflicts"
+
+            # Abort the rebase
+            git rebase --abort
+
+            # Get list of conflicting files for the issue
+            git checkout dev
+            git merge origin/main --no-commit --no-ff || true
+            conflicts=$(git diff --name-only --diff-filter=U | tr '\n' ',' | sed 's/,$//')
+            echo "conflicts=$conflicts" >> $GITHUB_OUTPUT
+
+            # Reset to clean state
+            git merge --abort || true
+            git reset --hard origin/dev
+          fi
+
+      - name: Push rebased dev branch
+        if: steps.check-dev.outputs.exists == 'true' && steps.check-rebase.outputs.needed == 'true' && steps.rebase.outputs.success == 'true'
+        run: |
+          echo "Pushing rebased dev branch..."
+          git push origin dev --force-with-lease
+          echo "Successfully pushed rebased dev branch"
+
+      - name: Create issue for manual resolution
+        if: steps.check-dev.outputs.exists == 'true' && steps.check-rebase.outputs.needed == 'true' && steps.rebase.outputs.success == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const conflicts = '${{ steps.rebase.outputs.conflicts }}';
+            const conflictsList = conflicts ? conflicts.split(',').map(file => `- \`${file}\``).join('\n') : 'Unknown files';
+
+            const issueBody = `## Auto Rebase Failed
+
+            The automatic rebase of the \`dev\` branch with \`main\` has failed due to merge conflicts.
+
+            ### Conflicting Files:
+            ${conflictsList}
+
+            ### Manual Resolution Required:
+
+            1. Checkout the dev branch locally:
+               \`\`\`bash
+               git checkout dev
+               git pull origin dev
+               \`\`\`
+
+            2. Rebase with main:
+               \`\`\`bash
+               git fetch origin main
+               git rebase origin/main
+               \`\`\`
+
+            3. Resolve conflicts in the listed files above
+
+            4. Continue the rebase:
+               \`\`\`bash
+               git add .
+               git rebase --continue
+               \`\`\`
+
+            5. Force push the resolved branch:
+               \`\`\`bash
+               git push origin dev --force-with-lease
+               \`\`\`
+
+            ### Triggered by:
+            - **Commit**: ${{ github.sha }}
+            - **Author**: ${{ github.actor }}
+            - **Workflow**: ${{ github.workflow }}
+
+            This issue will be automatically closed when the next successful rebase occurs.
+            `;
+
+            // Check if there's already an open issue for rebase conflicts
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'auto-rebase-conflict'
+            });
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Auto Rebase Failed: Manual Resolution Required',
+                body: issueBody,
+                labels: ['auto-rebase-conflict', 'needs-attention']
+              });
+
+              console.log('Created issue for manual conflict resolution');
+            } else {
+              console.log('Issue for rebase conflicts already exists');
+            }
+
+      - name: Close resolved rebase issues
+        if: steps.check-dev.outputs.exists == 'true' && steps.check-rebase.outputs.needed == 'true' && steps.rebase.outputs.success == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Close any open rebase conflict issues
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'auto-rebase-conflict'
+            });
+
+            for (const issue of existingIssues.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Auto rebase has been successfully completed. Closing this issue.'
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+
+              console.log(`Closed issue #${issue.number}`);
+            }
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Auto Rebase Summary"
+          echo "- **Dev branch exists**: ${{ steps.check-dev.outputs.exists }}"
+          if [ "${{ steps.check-dev.outputs.exists }}" = "true" ]; then
+            echo "- **Rebase needed**: ${{ steps.check-rebase.outputs.needed }}"
+            if [ "${{ steps.check-rebase.outputs.needed }}" = "true" ]; then
+              echo "- **Rebase successful**: ${{ steps.rebase.outputs.success }}"
+            fi
+          fi
