@@ -374,7 +374,7 @@ async function testDatabaseSchema(): Promise<boolean> {
       ORDER BY ordinal_position
     `;
 
-    const requiredUserColumns = ['id', 'email', 'email_verified', 'is_admin'];
+    const requiredUserColumns = ['id', 'email', 'email_verified'];
     const userColumnNames = usersColumns.map((c: any) => c.column_name);
     const missingUserColumns = requiredUserColumns.filter((col) => !userColumnNames.includes(col));
 

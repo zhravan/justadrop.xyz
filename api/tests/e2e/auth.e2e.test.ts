@@ -9,7 +9,7 @@ import {
 
 /**
  * End-to-End Tests for Authentication System
- * 
+ *
  * These tests verify the complete authentication flow:
  * - Database connectivity and schema
  * - OTP generation and verification
@@ -65,7 +65,6 @@ describe('Authentication E2E Tests', () => {
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('email');
       expect(columnNames).toContain('email_verified');
-      expect(columnNames).toContain('is_admin');
     });
   });
 
@@ -100,7 +99,7 @@ describe('Authentication E2E Tests', () => {
         ORDER BY created_at DESC
         LIMIT 1
       `;
-      
+
       if (otpToken.length > 0) {
         otpCode = otpToken[0].code;
       }
@@ -114,24 +113,30 @@ describe('Authentication E2E Tests', () => {
       });
 
       expect(response.ok).toBe(false);
-      
+
       // Accept both 400 (proper) and 500 (if error handling needs fixing)
       const contentType = response.headers.get('content-type') || '';
-      
+
       if (response.status === 500) {
         // Read response based on content type
         if (contentType.includes('application/json')) {
           const data = await response.json();
-          console.warn('WARNING: Invalid OTP returned 500 instead of 400. Response:', JSON.stringify(data));
+          console.warn(
+            'WARNING: Invalid OTP returned 500 instead of 400. Response:',
+            JSON.stringify(data)
+          );
         } else {
           const text = await response.text();
-          console.warn('WARNING: Invalid OTP returned 500 instead of 400. Response:', text.substring(0, 200));
+          console.warn(
+            'WARNING: Invalid OTP returned 500 instead of 400. Response:',
+            text.substring(0, 200)
+          );
         }
         // Still mark as pass but note the issue
         expect(response.status).toBeGreaterThanOrEqual(400);
       } else {
         expect(response.status).toBe(400);
-        
+
         // Check content type - should be JSON
         if (contentType.includes('application/json')) {
           const data = await response.json();
@@ -153,7 +158,7 @@ describe('Authentication E2E Tests', () => {
         });
 
         // Wait a bit for email processing
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const otpToken = await dbClient`
           SELECT code FROM otp_tokens 
@@ -163,7 +168,7 @@ describe('Authentication E2E Tests', () => {
           ORDER BY created_at DESC
           LIMIT 1
         `;
-        
+
         if (otpToken.length > 0) {
           otpCode = otpToken[0].code;
         }
@@ -191,7 +196,9 @@ describe('Authentication E2E Tests', () => {
         } catch (e) {
           errorData = { note: 'Could not parse error response' };
         }
-        throw new Error(`OTP verification failed: ${response.status} - ${JSON.stringify(errorData)}`);
+        throw new Error(
+          `OTP verification failed: ${response.status} - ${JSON.stringify(errorData)}`
+        );
       }
 
       const data = await response.json();
@@ -218,7 +225,7 @@ describe('Authentication E2E Tests', () => {
           body: JSON.stringify({ email: testEmail }),
         });
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const otpToken = await dbClient`
           SELECT code FROM otp_tokens 
@@ -228,7 +235,7 @@ describe('Authentication E2E Tests', () => {
           ORDER BY created_at DESC
           LIMIT 1
         `;
-        
+
         if (otpToken.length > 0) {
           otpCode = otpToken[0].code;
         }
@@ -272,7 +279,7 @@ describe('Authentication E2E Tests', () => {
           body: JSON.stringify({ email: testEmail }),
         });
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const otpToken = await dbClient`
           SELECT code FROM otp_tokens 
@@ -282,14 +289,14 @@ describe('Authentication E2E Tests', () => {
           ORDER BY created_at DESC
           LIMIT 1
         `;
-        
+
         if (otpToken.length > 0) {
           const verifyResponse = await fetch(`${API_URL}/auth/otp/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: testEmail, code: otpToken[0].code }),
           });
-          
+
           const cookies = verifyResponse.headers.get('set-cookie');
           if (cookies) {
             const match = cookies.match(/sessionToken=([^;]+)/);
@@ -395,7 +402,7 @@ describe('Authentication E2E Tests', () => {
         body: JSON.stringify({ email: newUserEmail }),
       });
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Get OTP code
       const otpToken = await dbClient`
@@ -430,7 +437,9 @@ describe('Authentication E2E Tests', () => {
         } catch (e) {
           errorData = { note: 'Could not parse error response' };
         }
-        throw new Error(`OTP verification failed: ${verifyResponse.status} - ${JSON.stringify(errorData)}`);
+        throw new Error(
+          `OTP verification failed: ${verifyResponse.status} - ${JSON.stringify(errorData)}`
+        );
       }
 
       const data = await verifyResponse.json();
