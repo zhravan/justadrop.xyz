@@ -34,27 +34,7 @@ export class ModeratorService {
     const moderator = await this.createNewModerator(normalizedEmail);
 
     this.validateModeratorAccount(moderator);
-    return {
-      id: moderator.id,
-      assignedRegions: moderator.assignedRegions,
-      createdAt: moderator.createdAt,
-      isActive: moderator.isActive,
-      updatedAt: moderator.updatedAt,
-      userId: moderator.userId,
-      user: {
-        id: moderator.user.id,
-        email: moderator.user.email,
-        emailVerified: moderator.user.emailVerified,
-        name: moderator.user.name,
-        phone: moderator.user.phone,
-        gender: moderator.user.gender,
-        isBanned: moderator.user.isBanned,
-        volunteering: moderator.user.volunteering,
-        deletedAt: moderator.user.deletedAt,
-        createdAt: moderator.user.createdAt,
-        updatedAt: moderator.user.updatedAt,
-      },
-    };
+    return moderator;
   }
 
   private async createNewModerator(email: string) {
